@@ -37,6 +37,8 @@ export class AsanaClient {
   private readonly http: AxiosInstance;
 
   constructor(private readonly userId: string) {
+    console.log(`[AsanaClient] Creating client for userId: ${userId}`);
+
     this.http = axios.create({
       baseURL: config.ASANA_BASE_URL,
       headers: { 'Content-Type': 'application/json' },
@@ -116,6 +118,7 @@ export class AsanaClient {
   }
 
   async exchangeCodeForTokens(code: string): Promise<void> {
+    console.log(`[AsanaClient] Exchanging code for tokens for userId: ${this.userId}`);
     const response = await axios.post<OAuthTokenResponse>(
       config.ASANA_OAUTH_TOKEN_URL,
       new URLSearchParams({
@@ -128,6 +131,7 @@ export class AsanaClient {
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
     );
 
+    console.log(`[AsanaClient] ✓ Successfully exchanged code for tokens`);
     await this.persistTokenResponse(response.data);
   }
 
@@ -152,23 +156,35 @@ export class AsanaClient {
   }
 
   private async ensureValidAccessToken(): Promise<string> {
+    console.log(`[AsanaClient] ensureValidAccessToken for userId: ${this.userId}`);
     const stored = await tokenStore.get(this.userId);
+
     if (!stored) {
-      throw new Error('User is not authenticated with Asana');
+      console.error(`[AsanaClient] ❌ NO TOKENS FOUND for userId: ${this.userId}`);
+      throw new Error(
+        'User is not authenticated with Asana. Please visit http://localhost:3011/asana/authorize to connect your Asana account.'
+      );
     }
+
+    console.log(`[AsanaClient] ✓ Found tokens for userId: ${this.userId}`);
+    console.log(`[AsanaClient]   - Token expires: ${stored.expiresAtIso}`);
+    console.log(`[AsanaClient]   - Token received: ${stored.receivedAtIso}`);
 
     const expiry = new Date(stored.expiresAtIso).getTime();
     const now = Date.now();
 
     if (now > expiry - 60_000) {
+      console.log(`[AsanaClient] Token expired or expiring soon, refreshing...`);
       await this.refreshTokens();
       const refreshed = await tokenStore.get(this.userId);
       if (!refreshed) {
         throw new Error('Failed to refresh Asana access token');
       }
+      console.log(`[AsanaClient] ✓ Token refreshed successfully`);
       return refreshed.accessToken;
     }
 
+    console.log(`[AsanaClient] ✓ Using existing valid token`);
     return stored.accessToken;
   }
 
@@ -197,6 +213,9 @@ export class AsanaClient {
       receivedAtIso: new Date().toISOString(),
     };
 
+    console.log(`[AsanaClient] Persisting tokens for userId: ${this.userId}`);
+    console.log(`[AsanaClient]   - Expires at: ${tokenSet.expiresAtIso}`);
     await tokenStore.set(this.userId, tokenSet);
+    console.log(`[AsanaClient] ✓ Tokens persisted successfully`);
   }
 }

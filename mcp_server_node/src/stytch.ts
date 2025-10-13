@@ -25,8 +25,20 @@ function getClient(): Client {
 export const stytchVerifier = async (token: string): Promise<AuthInfo> => {
   console.time('stytch:introspectTokenLocal');
   try {
-    const { audience, scope, expires_at, ...rest } =
-      await getClient().idp.introspectTokenLocal(token);
+    const rawResponse = await getClient().idp.introspectTokenLocal(token);
+    const { audience, scope, expires_at, ...rest } = rawResponse;
+
+    console.log('========================================');
+    console.log('STYTCH TOKEN INTROSPECTION RESPONSE:');
+    console.log('Full response:', JSON.stringify(rawResponse, null, 2));
+    console.log('Extra fields (rest):', JSON.stringify(rest, null, 2));
+    console.log('Available user ID fields:');
+    console.log('  - subject:', (rest as any).subject);
+    console.log('  - sub:', (rest as any).sub);
+    console.log('  - userId:', (rest as any).userId);
+    console.log('  - user_id:', (rest as any).user_id);
+    console.log('========================================');
+
     console.timeEnd('stytch:introspectTokenLocal');
     return {
       token,

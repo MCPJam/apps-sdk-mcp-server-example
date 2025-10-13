@@ -46,6 +46,58 @@ app.get('/health', (_req, res) =>
   res.status(200).json({ status: 'ok', service: 'asana-chatgpt-app-mcp' })
 );
 
+app.get('/oauth/callback', async (req, res) => {
+  try {
+    const code = req.query.code as string;
+    const state = req.query.state as string;
+    const error = req.query.error as string;
+
+    console.log('========================================');
+    console.log('ASANA OAUTH CALLBACK:');
+    console.log('Query params:', { code: code ? '***exists***' : 'missing', state, error });
+
+    if (error) {
+      console.error('OAuth callback received error:', error);
+      return res.redirect(
+        `http://localhost:3011/?error=${encodeURIComponent(error)}`
+      );
+    }
+
+    if (!code || !state) {
+      console.error('Missing code or state parameter');
+      return res.redirect(
+        `http://localhost:3011/?error=${encodeURIComponent('Missing code or state parameter')}`
+      );
+    }
+
+    // The state parameter contains the Stytch user ID
+    const userId = state;
+
+    console.log('🔑 CRITICAL: Mapping Asana tokens to userId from state parameter');
+    console.log('   State parameter (userId):', userId);
+    console.log('   This userId MUST match the Stytch user ID from token introspection');
+    console.log('   Otherwise tokens will be mapped to the wrong user!');
+    console.log('========================================');
+
+    // Exchange code for tokens
+    const { AsanaClient } = await import('./asanaClient.js');
+    const client = new AsanaClient(userId);
+    await client.exchangeCodeForTokens(code);
+
+    console.log('✓ OAuth callback completed successfully');
+
+    // Redirect back to frontend with success
+    res.redirect('http://localhost:3011/?asana_connected=true');
+  } catch (error) {
+    console.error('OAuth callback error:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error during Asana authorization';
+    res.redirect(
+      `http://localhost:3011/?error=${encodeURIComponent(errorMessage)}`
+    );
+  }
+});
+
 const bearerAuthMiddleware = requireBearerAuth({
   verifier: {
     verifyAccessToken: stytchVerifier,

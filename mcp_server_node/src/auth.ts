@@ -7,7 +7,21 @@ export function ensureAuthorized(authInfo?: AuthInfo): string {
     throw new Error('Unauthorized request to MCP server: No auth info provided');
   }
 
-  return extractSubject(authInfo) ?? DEFAULT_USER_ID;
+  const userId = extractSubject(authInfo) ?? DEFAULT_USER_ID;
+
+  console.log('========================================');
+  console.log('USER ID EXTRACTION:');
+  console.log('Extracted userId:', userId);
+  if (userId === DEFAULT_USER_ID) {
+    console.warn('⚠️  WARNING: Using DEFAULT_USER_ID - this means user ID was not found in token!');
+    console.warn('⚠️  This could cause token leakage between users!');
+    console.warn('AuthInfo.extra:', JSON.stringify(authInfo.extra, null, 2));
+  } else {
+    console.log('✓ Successfully extracted user-specific ID');
+  }
+  console.log('========================================');
+
+  return userId;
 }
 
 export function extractSubject(authInfo?: AuthInfo): string | undefined {

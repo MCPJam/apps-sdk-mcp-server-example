@@ -1,43 +1,21 @@
-export type UnknownObject = Record<string, unknown>;
+export const SET_GLOBALS_EVENT_TYPE = 'setGlobals';
 
-export type DisplayMode = 'inline' | 'pip' | 'fullscreen';
-
-export type OpenAiGlobals<
-  ToolInput = UnknownObject,
-  ToolOutput = UnknownObject,
-  ToolResponseMetadata = UnknownObject,
-  WidgetState = UnknownObject
-> = {
-  theme?: 'light' | 'dark';
-  locale?: string;
-  maxHeight?: number;
-  displayMode?: DisplayMode;
-  toolInput?: ToolInput;
-  toolOutput?: ToolOutput | null;
-  toolResponseMetadata?: ToolResponseMetadata | null;
-  widgetState?: WidgetState | null;
-  setWidgetState?: (state: WidgetState) => Promise<void>;
-  callTool?: (
-    name: string,
-    args: Record<string, unknown>
-  ) => Promise<{ result: string }>;
-  sendFollowUpMessage?: (payload: { prompt: string }) => Promise<void>;
-};
-
-export const SET_GLOBALS_EVENT_TYPE = 'openai:set_globals';
-
-export class SetGlobalsEvent extends CustomEvent<{
+export type SetGlobalsEvent = CustomEvent<{
   globals: Partial<OpenAiGlobals>;
-}> {
-  readonly type = SET_GLOBALS_EVENT_TYPE;
-}
+}>;
+
+export type OpenAiGlobals = {
+  toolInput: unknown;
+  toolOutput: unknown;
+  conversationId: string;
+  messageId: string;
+  userId: string;
+};
 
 declare global {
   interface Window {
-    openai?: OpenAiGlobals;
-  }
-
-  interface WindowEventMap {
-    [SET_GLOBALS_EVENT_TYPE]: SetGlobalsEvent;
+    openai?: Partial<OpenAiGlobals> & {
+      sendFollowUpMessage?: (params: { prompt: string }) => void;
+    };
   }
 }
