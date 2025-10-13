@@ -5,8 +5,24 @@ import react from '@vitejs/plugin-react';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig({
-  plugins: [react()],
+export default defineConfig(({}) => ({
+  plugins: [
+    react(),
+    {
+      name: 'widget-html-middleware',
+      configureServer(server) {
+        server.middlewares.use((req, _res, next) => {
+          if (req.url?.startsWith('/tasks') && !req.url.includes('.')) {
+            req.url = req.url.replace(/\/?$/, '/index.html');
+          }
+          next();
+        });
+      },
+    },
+  ],
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
   server: {
     port: 4444,
     strictPort: true,
@@ -31,6 +47,7 @@ export default defineConfig({
       input: {
         tasks: resolve(__dirname, 'tasks/index.html'),
       },
+      preserveEntrySignatures: 'strict',
       output: {
         entryFileNames: '[name].js',
         chunkFileNames: '[name]-[hash].js',
@@ -38,4 +55,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

@@ -31,23 +31,47 @@ export function createServer(): McpServer {
     'tasks-widget',
     'ui://widget/tasks.html',
     {},
-    () => ({
-      contents: [
-        {
-          uri: 'ui://widget/tasks.html',
-          mimeType: 'text/html+skybridge',
-          text: `
-            <div id="tasks-root"></div>
-            <link rel="stylesheet" href="${widgetBaseUrl}/tasks.css">
-            <script type="module" src="${widgetBaseUrl}/tasks.js"></script>
-          `.trim(),
-          _meta: {
-            'openai/widgetDescription':
-              'Displays Asana tasks that are due today for the selected workspace.',
+    async () => {
+      let widgetHtml: string;
+
+      if (config.DEV_MODE) {
+        // In dev mode, fetch the full HTML from Vite dev server
+        try {
+          const response = await fetch(`${widgetBaseUrl}/tasks/`);
+          let html = await response.text();
+
+          // Convert relative paths to absolute URLs
+          html = html.replace(/src="\/(@vite|tasks)/g, `src="${widgetBaseUrl}/$1`);
+          html = html.replace(/href="\/(@vite|tasks)/g, `href="${widgetBaseUrl}/$1`);
+
+          widgetHtml = html;
+        } catch (error) {
+          console.error('Failed to fetch widget HTML from dev server:', error);
+          widgetHtml = `<div>Error loading widget. Is the dev server running on ${widgetBaseUrl}?</div>`;
+        }
+      } else {
+        // In production, use built files
+        widgetHtml = `
+          <div id="tasks-root"></div>
+          <link rel="stylesheet" href="${widgetBaseUrl}/tasks.css">
+          <script type="module" src="${widgetBaseUrl}/tasks.js"></script>
+        `.trim();
+      }
+
+      return {
+        contents: [
+          {
+            uri: 'ui://widget/tasks.html',
+            mimeType: 'text/html+skybridge',
+            text: widgetHtml,
+            _meta: {
+              'openai/widgetDescription':
+                'Displays Asana tasks that are due today for the selected workspace.',
+            },
           },
-        },
-      ],
-    })
+        ],
+      };
+    }
   );
 
   server.registerTool(

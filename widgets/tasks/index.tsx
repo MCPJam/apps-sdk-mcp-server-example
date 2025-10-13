@@ -1,16 +1,20 @@
 import { createRoot } from 'react-dom/client';
 import './index.css';
-import { useToolOutput } from '../utils/use-tool-output';
+import { useToolOutput } from '../utils/use-tool-output.ts';
 import type { TaskListResult } from '@asana-chatgpt-app/shared-types';
 
+console.log('[Widget] Module loaded successfully');
+console.log('[Widget] React version:', import.meta.env.MODE);
+
 function App() {
+  console.log('[Widget] App component rendering');
   const output = useToolOutput<TaskListResult>();
 
   if (output === null || !output.workspace) {
     return (
       <div className="w-full p-4 border border-gray-200 rounded-lg bg-white">
         <div className="flex items-center justify-center gap-2 min-h-[200px]">
-          <div className="text-2xl animate-pulse">⏳</div>
+          <div className="text-2xl animate-pulse">Loading...</div>
           <span className="text-gray-600">Loading tasks...</span>
         </div>
       </div>
@@ -25,7 +29,7 @@ function App() {
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 text-white">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-2xl">📋</span>
-          <h2 className="text-xl font-bold">Tasks Due Today</h2>
+          <h2 className="text-xl font-bold">Tasks Due Today!</h2>
         </div>
         <p className="text-blue-100 text-sm">
           {workspace.name} • {taskCount} {taskCount === 1 ? 'task' : 'tasks'}

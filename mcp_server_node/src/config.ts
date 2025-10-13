@@ -23,6 +23,7 @@ const EnvSchema = z.object({
   STYTCH_PROJECT_SECRET: z.string().min(1),
   STYTCH_DOMAIN: z.string().url(),
   STYTCH_ENVIRONMENT: z.enum(['test', 'live']).default('test'),
+  DEV_MODE: z.coerce.boolean().default(false),
 });
 
 const parsed = EnvSchema.safeParse(process.env);

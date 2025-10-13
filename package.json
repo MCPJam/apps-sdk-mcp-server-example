@@ -6,11 +6,11 @@
   "packageManager": "pnpm@10.13.1",
   "scripts": {
     "build": "pnpm -r build",
-    "dev": "concurrently --kill-others-on-fail --names \"MCP,WIDGET\" --prefix-colors \"blue,magenta\" \"pnpm run dev:mcp\" \"pnpm run dev:widgets\"",
+    "dev": "pnpm run dev:all",
     "dev:app": "pnpm --filter asana-chatgpt-app-web dev",
     "dev:mcp": "pnpm --filter asana-chatgpt-app-mcp-server run start",
-    "dev:widgets": "pnpm --filter @asana-chatgpt-app/widget-tasks run dev",
-    "dev:all": "concurrently --kill-others-on-fail --names \"MCP,APP,WIDGET\" --prefix-colors \"blue,green,magenta\" \"pnpm run dev:mcp\" \"pnpm run dev:app\" \"pnpm run dev:widgets\"",
+    "dev:widgets": "cd widgets && vite dev --host --port 4444",
+    "dev:all": "concurrently --kill-others-on-fail --names \"MCP,WIDGET,APP\" --prefix-colors \"blue,magenta,green\" \"pnpm run dev:mcp\" \"pnpm run dev:widgets\" \"pnpm run dev:app\"",
     "build:mcp": "pnpm --filter asana-chatgpt-app-mcp-server run build",
     "start:mcp": "pnpm --filter asana-chatgpt-app-mcp-server run start",
     "lint": "pnpm -r lint"

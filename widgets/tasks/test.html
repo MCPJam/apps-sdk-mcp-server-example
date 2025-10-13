@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Asana Tasks - Test</title>
+    <script>
+      // Mock OpenAI global context for local testing
+      window.openai = {
+        toolOutput: {
+          workspace: {
+            gid: "1211188104086731",
+            name: "Test Workspace"
+          },
+          tasks: [
+            {
+              gid: "1",
+              name: "Test task 1",
+              completed: false,
+              permalinkUrl: "https://app.asana.com/0/1/1",
+              projectNames: ["Project A"],
+              assignee: {
+                name: "John Doe",
+                photoUrl: null
+              },
+              dueAt: new Date().toISOString()
+            },
+            {
+              gid: "2",
+              name: "Test task 2 (completed)",
+              completed: true,
+              permalinkUrl: "https://app.asana.com/0/1/2",
+              projectNames: ["Project B"],
+              assignee: null,
+              dueAt: null
+            }
+          ],
+          taskCount: 2,
+          fetchedAtIso: new Date().toISOString()
+        }
+      };
+      console.log('Mock data injected:', window.openai.toolOutput);
+    </script>
+  </head>
+  <body>
+    <div id="tasks-root"></div>
+    <script type="module" src="/tasks/index.tsx"></script>
+  </body>
+</html>
