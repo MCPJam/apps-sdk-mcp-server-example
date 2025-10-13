@@ -73,8 +73,7 @@ app.get('/oauth/callback', async (req, res) => {
     // The state parameter contains the Stytch user ID
     const userId = state;
 
-    console.log('🔑 CRITICAL: Mapping Asana tokens to userId from state parameter');
-    console.log('   State parameter (userId):', userId);
+    console.log('🔑 State parameter (userId):', userId);
     console.log('   This userId MUST match the Stytch user ID from token introspection');
     console.log('   Otherwise tokens will be mapped to the wrong user!');
     console.log('========================================');
@@ -139,7 +138,7 @@ app.post(
 
 const server = app.listen(config.MCP_HTTP_PORT, () => {
   console.log(
-    `Asana MCP server listening on port ${config.MCP_HTTP_PORT} (widgets hosted at ${config.WIDGETS_BASE_URL ?? config.FRONTEND_DOMAIN ?? 'http://localhost:4444'})`
+    `Asana MCP server listening on port ${config.MCP_HTTP_PORT} (widgets hosted at ${config.FRONTEND_DOMAIN})`
   );
 });
 

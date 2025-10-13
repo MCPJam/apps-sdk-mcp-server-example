@@ -54,3 +54,36 @@ export const stytchVerifier = async (token: string): Promise<AuthInfo> => {
     throw error;
   }
 };
+
+export async function getUserTrustedMetadata(
+  userId: string
+): Promise<Record<string, unknown>> {
+  console.time('stytch:getUserMetadata');
+  try {
+    const response = await getClient().users.get({ user_id: userId });
+    console.timeEnd('stytch:getUserMetadata');
+    return response.trusted_metadata || {};
+  } catch (error) {
+    console.timeEnd('stytch:getUserMetadata');
+    console.error('Failed to get user trusted metadata', error);
+    return {};
+  }
+}
+
+export async function updateUserTrustedMetadata(
+  userId: string,
+  metadata: Record<string, unknown>
+): Promise<void> {
+  console.time('stytch:updateUserMetadata');
+  try {
+    await getClient().users.update({
+      user_id: userId,
+      trusted_metadata: metadata,
+    });
+    console.timeEnd('stytch:updateUserMetadata');
+  } catch (error) {
+    console.timeEnd('stytch:updateUserMetadata');
+    console.error('Failed to update user trusted metadata', error);
+    throw error;
+  }
+}

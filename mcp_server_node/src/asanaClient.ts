@@ -179,7 +179,7 @@ export class AsanaClient {
     if (!stored) {
       console.error(`[AsanaClient] ❌ NO TOKENS FOUND for userId: ${this.userId}`);
       throw new Error(
-        'User is not authenticated with Asana. Please visit http://localhost:3011/asana/authorize to connect your Asana account.'
+        'Asana account not connected. Please visit http://localhost:3011/asana/authorize to connect your Asana account and enable these features.'
       );
     }
 

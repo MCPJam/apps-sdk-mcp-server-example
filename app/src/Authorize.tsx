@@ -41,6 +41,8 @@ export function Authorize() {
         response_type: 'code',
         consent_granted: granted,
       });
+
+      // Redirect back to the MCP client with the authorization result
       window.location.href = response.redirect_uri;
     } catch (err) {
       console.error('OAuth authorize submit failed:', err);

@@ -25,12 +25,7 @@ export function createServer(): McpServer {
     version: '0.1.0',
   });
 
-  const widgetBase =
-    config.WIDGETS_BASE_URL ??
-    config.FRONTEND_DOMAIN ??
-    'http://localhost:4444';
-
-  const widgetBaseUrl = widgetBase.replace(/\/$/, '');
+  const widgetBaseUrl = config.FRONTEND_DOMAIN.replace(/\/$/, '');
 
   server.registerResource(
     'tasks-widget',

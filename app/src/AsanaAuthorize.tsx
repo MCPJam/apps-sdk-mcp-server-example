@@ -15,8 +15,8 @@ export function AsanaAuthorize() {
     console.log('========================================');
     console.log('ASANA AUTHORIZATION FLOW STARTING');
     console.log('Stytch user object:', user);
-    console.log('🔑 CRITICAL: Using user.user_id as state parameter:', user.user_id);
-    console.log('This ID will be used to map Asana tokens on callback');
+    console.log('🔑 User ID:', user.user_id);
+    console.log('This will be used to map Asana tokens on callback');
     console.log('========================================');
 
     // Build Asana OAuth URL

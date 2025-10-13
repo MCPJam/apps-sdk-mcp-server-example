@@ -17,10 +17,8 @@ const EnvSchema = z.object({
     .string()
     .url()
     .default('https://app.asana.com/-/oauth_token'),
-  FRONTEND_DOMAIN: z.string().url().optional(),
-  WIDGETS_BASE_URL: z.string().url().optional(),
+  FRONTEND_DOMAIN: z.string().url(),
   SERVER_BASE_URL: z.string().url().optional(),
-  ASANA_TOKEN_STORE_PATH: z.string().optional(),
   STYTCH_PROJECT_ID: z.string().min(1),
   STYTCH_PROJECT_SECRET: z.string().min(1),
   STYTCH_DOMAIN: z.string().url(),
@@ -46,13 +44,8 @@ function stripTrailingSlash(value: string): string {
 export const config = {
   ...data,
   STYTCH_DOMAIN: stripTrailingSlash(data.STYTCH_DOMAIN),
+  FRONTEND_DOMAIN: stripTrailingSlash(data.FRONTEND_DOMAIN),
   SERVER_BASE_URL: data.SERVER_BASE_URL
     ? stripTrailingSlash(data.SERVER_BASE_URL)
-    : undefined,
-  FRONTEND_DOMAIN: data.FRONTEND_DOMAIN
-    ? stripTrailingSlash(data.FRONTEND_DOMAIN)
-    : undefined,
-  WIDGETS_BASE_URL: data.WIDGETS_BASE_URL
-    ? stripTrailingSlash(data.WIDGETS_BASE_URL)
     : undefined,
 };
