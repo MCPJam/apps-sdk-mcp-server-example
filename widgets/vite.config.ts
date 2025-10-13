@@ -6,20 +6,7 @@ import react from '@vitejs/plugin-react';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  plugins: [
-    react(),
-    {
-      name: 'widget-html-middleware',
-      configureServer(server) {
-        server.middlewares.use((req, _res, next) => {
-          if (req.url?.startsWith('/widgets/') && !req.url.includes('.')) {
-            req.url = req.url.replace(/\/?$/, '/index.html');
-          }
-          next();
-        });
-      },
-    },
-  ],
+  plugins: [react()],
   server: {
     port: 4444,
     strictPort: true,

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host --port 4444",
-    "build": "tsc -p tsconfig.json && vite build",
+    "build": "tsc -p tsconfig.json && vite build && pnpm run link-assets",
+    "link-assets": "cd ../tasks && ln -sf ../dist/tasks.js tasks.js && ln -sf ../dist/tasks.css tasks.css",
     "preview": "vite preview --host --port 4444",
     "lint": "tsc -p tsconfig.json --noEmit"
   },
