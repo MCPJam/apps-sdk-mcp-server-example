@@ -29,7 +29,7 @@ function App() {
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 text-white">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-2xl">📋</span>
-          <h2 className="text-xl font-bold">Tasks Due Today!</h2>
+          <h2 className="text-xl font-bold">Tasks Due Today!!</h2>
         </div>
         <p className="text-blue-100 text-sm">
           {workspace.name} • {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
