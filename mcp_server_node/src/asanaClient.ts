@@ -74,18 +74,35 @@ export class AsanaClient {
     const now = new Date();
     const dueDateIso = now.toISOString().slice(0, 10); // YYYY-MM-DD
 
-    const response = await this.http.get<{ data: AsanaTask[] }>(
-      `/tasks`,
-      {
-        params: {
-          workspace: input.workspaceGid,
-          completed_since: input.includeCompleted ? undefined : 'now',
-          due_on: dueDateIso,
-          opt_fields:
-            'gid,name,completed,due_on,due_at,permalink_url,assignee.(gid,name,email,photo.image_60x60),memberships.project.name',
-        },
+    const requestParams = {
+      assignee: 'me',
+      workspace: input.workspaceGid,
+      completed_since: input.includeCompleted ? undefined : now.toISOString(),
+      due_on: dueDateIso,
+      opt_fields:
+        'gid,name,completed,due_on,due_at,permalink_url,assignee.gid,assignee.name,assignee.email,assignee.photo.image_60x60,memberships.project.name',
+    };
+
+    console.log('[AsanaClient] listTasksDueToday request params:', JSON.stringify(requestParams, null, 2));
+
+    let response;
+    try {
+      response = await this.http.get<{ data: AsanaTask[] }>(
+        `/tasks`,
+        { params: requestParams }
+      );
+    } catch (error) {
+      console.error('[AsanaClient] ❌ listTasksDueToday failed');
+      if (axios.isAxiosError(error)) {
+        console.error('[AsanaClient] Status:', error.response?.status);
+        console.error('[AsanaClient] Response data:', JSON.stringify(error.response?.data, null, 2));
+        console.error('[AsanaClient] Request URL:', error.config?.url);
+        console.error('[AsanaClient] Request params:', JSON.stringify(error.config?.params, null, 2));
       }
-    );
+      throw error;
+    }
+
+    console.log('[AsanaClient] ✓ listTasksDueToday succeeded, found', response.data.data.length, 'tasks');
 
     const tasks: TaskDueToday[] = response.data.data.map((task) => ({
       gid: task.gid,
@@ -189,15 +206,28 @@ export class AsanaClient {
   }
 
   private async getWorkspaceSummary(gid: string): Promise<WorkspaceSummary> {
-    const response = await this.http.get<{ data: { gid: string; name: string } }>(
-      `/workspaces/${gid}`,
-      { params: { opt_fields: 'gid,name' } }
-    );
+    console.log('[AsanaClient] getWorkspaceSummary for gid:', gid);
 
-    return {
-      gid: response.data.data.gid,
-      name: response.data.data.name,
-    };
+    try {
+      const response = await this.http.get<{ data: { gid: string; name: string } }>(
+        `/workspaces/${gid}`,
+        { params: { opt_fields: 'gid,name' } }
+      );
+
+      console.log('[AsanaClient] ✓ getWorkspaceSummary succeeded:', response.data.data.name);
+
+      return {
+        gid: response.data.data.gid,
+        name: response.data.data.name,
+      };
+    } catch (error) {
+      console.error('[AsanaClient] ❌ getWorkspaceSummary failed');
+      if (axios.isAxiosError(error)) {
+        console.error('[AsanaClient] Status:', error.response?.status);
+        console.error('[AsanaClient] Response data:', JSON.stringify(error.response?.data, null, 2));
+      }
+      throw error;
+    }
   }
 
   private async persistTokenResponse(
