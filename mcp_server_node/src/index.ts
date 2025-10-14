@@ -136,7 +136,7 @@ app.post(
   }
 );
 
-const server = app.listen(config.MCP_HTTP_PORT, () => {
+const server = app.listen(config.MCP_HTTP_PORT, '0.0.0.0', () => {
   console.log(
     `Asana MCP server listening on port ${config.MCP_HTTP_PORT} (widgets hosted at ${config.FRONTEND_DOMAIN})`
   );
