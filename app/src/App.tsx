@@ -124,8 +124,22 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      <Route path="/asana/authorize" element={<AsanaAuthorize />} />
-      <Route path="/" element={<Home />} />
+      <Route
+        path="/asana/authorize"
+        element={
+          <ProtectedRoute>
+            <AsanaAuthorize />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }
