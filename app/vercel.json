@@ -1,7 +1,12 @@
 {
+  "buildCommand": "vite build",
+  "devCommand": "vite --port $PORT",
+  "installCommand": "pnpm install",
+  "framework": null,
+  "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api|@vite|@react-refresh|src|node_modules|@fs).*)",
       "destination": "/index.html"
     }
   ]

@@ -7,7 +7,7 @@
   "scripts": {
     "build": "pnpm -r build",
     "dev": "pnpm run dev:all",
-    "dev:app": "pnpm --filter asana-chatgpt-app-web dev",
+    "dev:app": "cd app && vercel dev --listen 3011 --yes",
     "dev:mcp": "pnpm --filter asana-chatgpt-app-mcp-server run start",
     "dev:widgets": "cd widgets && vite dev --host --port 4444",
     "dev:all": "concurrently --kill-others-on-fail --names \"MCP,WIDGET,APP\" --prefix-colors \"blue,magenta,green\" \"pnpm run dev:mcp\" \"pnpm run dev:widgets\" \"pnpm run dev:app\"",
@@ -22,6 +22,7 @@
     "shared-types"
   ],
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "vercel": "^48.2.9"
   }
 }
