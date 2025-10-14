@@ -8,6 +8,8 @@ import {
   type TaskDetail,
   type TaskDueToday,
   type TaskListResult,
+  type UpdateTaskInput,
+  type UpdateTaskResult,
   type WorkspaceListResult,
   type WorkspaceSummary,
 } from '@asana-chatgpt-app/shared-types';
@@ -283,6 +285,81 @@ export class AsanaClient {
     return {
       task,
       fetchedAtIso: new Date().toISOString(),
+    };
+  }
+
+  async updateTask(input: UpdateTaskInput): Promise<UpdateTaskResult> {
+    console.log('[AsanaClient] updateTask for gid:', input.taskGid);
+    console.log('[AsanaClient] Update fields:', JSON.stringify(input, null, 2));
+
+    const updateData: Record<string, unknown> = {};
+
+    // Only include fields that are explicitly provided
+    if (input.assignee !== undefined) {
+      updateData.assignee = input.assignee;
+    }
+    if (input.dueOn !== undefined) {
+      updateData.due_on = input.dueOn;
+    }
+    if (input.dueAt !== undefined) {
+      updateData.due_at = input.dueAt;
+    }
+    if (input.completed !== undefined) {
+      updateData.completed = input.completed;
+    }
+
+    const requestParams = {
+      opt_fields:
+        'gid,name,completed,due_on,due_at,permalink_url,notes,created_at,modified_at,assignee.gid,assignee.name,assignee.email,assignee.photo.image_60x60,memberships.project.name,tags.gid,tags.name',
+    };
+
+    let response;
+    try {
+      response = await this.http.put<{ data: AsanaTaskDetail }>(
+        `/tasks/${input.taskGid}`,
+        { data: updateData },
+        { params: requestParams }
+      );
+    } catch (error) {
+      console.error('[AsanaClient] ❌ updateTask failed');
+      if (axios.isAxiosError(error)) {
+        console.error('[AsanaClient] Status:', error.response?.status);
+        console.error('[AsanaClient] Response data:', JSON.stringify(error.response?.data, null, 2));
+        console.error('[AsanaClient] Request URL:', error.config?.url);
+      }
+      throw error;
+    }
+
+    console.log('[AsanaClient] ✓ updateTask succeeded:', response.data.data.name);
+
+    const taskData = response.data.data;
+    const task: TaskDetail = {
+      gid: taskData.gid,
+      name: taskData.name,
+      completed: taskData.completed,
+      permalinkUrl: taskData.permalink_url,
+      notes: taskData.notes,
+      dueOn: taskData.due_on,
+      dueAt: taskData.due_at,
+      createdAt: taskData.created_at,
+      modifiedAt: taskData.modified_at,
+      assignee: taskData.assignee
+        ? {
+            gid: taskData.assignee.gid,
+            name: taskData.assignee.name,
+            email: taskData.assignee.email ?? null,
+            photoUrl: taskData.assignee.photo?.image_60x60 ?? null,
+          }
+        : null,
+      projectNames: (taskData.memberships ?? [])
+        .map((membership) => membership.project?.name)
+        .filter((name): name is string => Boolean(name)),
+      tags: taskData.tags,
+    };
+
+    return {
+      task,
+      updatedAtIso: new Date().toISOString(),
     };
   }
 

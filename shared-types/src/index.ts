@@ -80,6 +80,19 @@ export type GetTaskResult = {
   fetchedAtIso: string;
 };
 
+export type UpdateTaskInput = {
+  taskGid: string;
+  assignee?: string | null;
+  dueOn?: string | null;
+  dueAt?: string | null;
+  completed?: boolean;
+};
+
+export type UpdateTaskResult = {
+  task: TaskDetail;
+  updatedAtIso: string;
+};
+
 export type TaskWidgetState = {
   selectedWorkspaceGid: string | null;
   includeCompleted?: boolean;

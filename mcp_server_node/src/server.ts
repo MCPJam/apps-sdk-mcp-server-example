@@ -8,6 +8,8 @@ import {
   type SearchTasksInput,
   type SearchTasksResult,
   type TaskListResult,
+  type UpdateTaskInput,
+  type UpdateTaskResult,
   type WorkspaceListResult,
 } from '@asana-chatgpt-app/shared-types';
 import { config } from './config.js';
@@ -34,6 +36,14 @@ const searchTasksInputSchema = z.object({
 const getTaskInputSchema = z.object({
   taskGid: z.string().min(1, 'taskGid is required'),
 }) satisfies z.ZodType<GetTaskInput>;
+
+const updateTaskInputSchema = z.object({
+  taskGid: z.string().min(1, 'taskGid is required'),
+  assignee: z.string().nullable().optional(),
+  dueOn: z.string().nullable().optional(),
+  dueAt: z.string().nullable().optional(),
+  completed: z.boolean().optional(),
+}) satisfies z.ZodType<UpdateTaskInput>;
 
 const registerAuthCodeSchema = z.object({
   code: z.string().min(6),
@@ -254,6 +264,69 @@ export function createServer(): McpServer {
         ],
         structuredContent: result satisfies GetTaskResult,
       };
+    }
+  );
+
+  server.registerTool(
+    'update-task',
+    {
+      title: 'Update task',
+      description: 'Updates a task in Asana. Can modify assignee, due dates, and completion status.',
+      _meta: {
+        'openai/toolInvocation/invoking': 'Updating task…',
+        'openai/toolInvocation/invoked': 'Task updated.',
+        'openai/widgetAccessible': true,
+      },
+      inputSchema: {
+        taskGid: z.string().min(1).describe('The task GID to update'),
+        assignee: z.string().nullable().optional().describe('User GID to assign the task to, or null to unassign'),
+        dueOn: z.string().nullable().optional().describe('Due date in YYYY-MM-DD format, or null to clear'),
+        dueAt: z.string().nullable().optional().describe('Due date-time in ISO 8601 format, or null to clear'),
+        completed: z.boolean().optional().describe('Mark task as completed (true) or incomplete (false)'),
+      },
+    },
+    async (input, { authInfo }) => {
+      try {
+        console.log('[MCP Server] update-task called with input:', JSON.stringify(input, null, 2));
+        const validatedInput = updateTaskInputSchema.parse(input);
+        console.log('[MCP Server] Validated input:', JSON.stringify(validatedInput, null, 2));
+
+        const userId = ensureAuthorized(authInfo);
+        const client = new AsanaClient(userId);
+        const result = await client.updateTask(validatedInput);
+
+        const changes = [];
+        if (validatedInput.assignee !== undefined) {
+          changes.push(validatedInput.assignee ? 'assignee updated' : 'assignee removed');
+        }
+        if (validatedInput.dueOn !== undefined || validatedInput.dueAt !== undefined) {
+          changes.push('due date updated');
+        }
+        if (validatedInput.completed !== undefined) {
+          changes.push(validatedInput.completed ? 'marked complete' : 'marked incomplete');
+        }
+
+        const summary =
+          changes.length > 0
+            ? `Updated task "${result.task.name}": ${changes.join(', ')}.`
+            : `Task "${result.task.name}" updated.`;
+
+        // Return structured data in the text content so widgets can parse it
+        const responseText = JSON.stringify(result);
+        console.log('[MCP Server] Returning response text:', responseText);
+
+        return {
+          content: [{ type: 'text', text: responseText }],
+          structuredContent: result satisfies UpdateTaskResult,
+        };
+      } catch (error) {
+        console.error('[MCP Server] update-task failed with error:', error);
+        if (error instanceof Error) {
+          console.error('[MCP Server] Error message:', error.message);
+          console.error('[MCP Server] Error stack:', error.stack);
+        }
+        throw error;
+      }
     }
   );
 

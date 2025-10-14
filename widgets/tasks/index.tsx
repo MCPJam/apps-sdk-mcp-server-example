@@ -1,10 +1,77 @@
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import { useToolOutput } from '../utils/use-tool-output.ts';
-import type { TaskListResult, TaskDueToday, TaskDetail as TaskDetailType, GetTaskResult } from '@asana-chatgpt-app/shared-types';
+import type { TaskListResult, TaskDueToday, TaskDetail as TaskDetailType, GetTaskResult, UpdateTaskResult } from '@asana-chatgpt-app/shared-types';
 import { useState } from 'react';
 
-function TaskDetail({ task, onBack }: { task: TaskDetailType; onBack: () => void }) {
+function TaskDetail({ task, onBack, onTaskUpdate }: {
+  task: TaskDetailType;
+  onBack: () => void;
+  onTaskUpdate: (updatedTask: TaskDetailType) => void;
+}) {
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [editingDueDate, setEditingDueDate] = useState(false);
+
+  const handleToggleComplete = async () => {
+    if (isUpdating) return;
+
+    console.log('[Widget] Toggling completion, current state:', task.completed);
+    setIsUpdating(true);
+    try {
+      if (window.openai?.callTool) {
+        const response = await window.openai.callTool('update-task', {
+          taskGid: task.gid,
+          completed: !task.completed,
+        });
+        console.log('[Widget] update-task response:', response);
+        console.log('[Widget] response keys:', Object.keys(response || {}));
+        console.log('[Widget] response.result:', response?.result);
+        console.log('[Widget] response type:', typeof response);
+
+        if (response?.result) {
+          const parsed = JSON.parse(response.result) as UpdateTaskResult;
+          console.log('[Widget] Parsed update result:', parsed);
+          if (parsed?.task) {
+            console.log('[Widget] Updated task completed status:', parsed.task.completed);
+            onTaskUpdate(parsed.task);
+          }
+        } else {
+          console.warn('[Widget] No result in response, cannot update UI');
+        }
+      }
+    } catch (error) {
+      console.error('[Widget] Failed to update task:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDueDateChange = async (newDueDate: string | null) => {
+    if (isUpdating) return;
+
+    setIsUpdating(true);
+    setEditingDueDate(false);
+
+    try {
+      if (window.openai?.callTool) {
+        const response = await window.openai.callTool('update-task', {
+          taskGid: task.gid,
+          dueOn: newDueDate,
+        });
+
+        if (response?.result) {
+          const parsed = JSON.parse(response.result) as UpdateTaskResult;
+          if (parsed?.task) {
+            onTaskUpdate(parsed.task);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[Widget] Failed to update task:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
   return (
     <div className="w-full h-full bg-white">
       {/* Header with Back Button */}
@@ -39,11 +106,15 @@ function TaskDetail({ task, onBack }: { task: TaskDetailType; onBack: () => void
         {/* Task Title with Checkbox */}
         <div className="mb-6">
           <div className="flex items-start gap-3">
-            <button className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-              task.completed
-                ? 'bg-green-500 border-green-500'
-                : 'border-gray-400 hover:border-green-500'
-            }`}>
+            <button
+              onClick={handleToggleComplete}
+              disabled={isUpdating}
+              className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                task.completed
+                  ? 'bg-green-500 border-green-500'
+                  : 'border-gray-400 hover:border-green-500'
+              } ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            >
               {task.completed && (
                 <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
@@ -91,29 +162,68 @@ function TaskDetail({ task, onBack }: { task: TaskDetailType; onBack: () => void
           )}
 
           {/* Due Date */}
-          {task.dueOn && (
-            <div className="flex items-center py-3">
-              <div className="w-28 text-xs font-semibold text-gray-500 shrink-0">Due date</div>
-              <div className="flex-1">
-                <div className="text-sm text-gray-900">
-                  {new Date(task.dueOn).toLocaleDateString(undefined, {
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
-                  {task.dueAt && (
-                    <span className="text-gray-500">
-                      {' '}at {new Date(task.dueAt).toLocaleTimeString([], {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                  )}
+          <div className="flex items-center py-3">
+            <div className="w-28 text-xs font-semibold text-gray-500 shrink-0">Due date</div>
+            <div className="flex-1">
+              {editingDueDate ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    defaultValue={task.dueOn || ''}
+                    className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onBlur={(e) => {
+                      const value = e.target.value || null;
+                      handleDueDateChange(value);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const value = (e.target as HTMLInputElement).value || null;
+                        handleDueDateChange(value);
+                      } else if (e.key === 'Escape') {
+                        setEditingDueDate(false);
+                      }
+                    }}
+                    autoFocus
+                    disabled={isUpdating}
+                  />
+                  <button
+                    onClick={() => handleDueDateChange(null)}
+                    className="text-xs text-red-600 hover:text-red-800"
+                    disabled={isUpdating}
+                  >
+                    Clear
+                  </button>
                 </div>
-              </div>
+              ) : (
+                <button
+                  onClick={() => setEditingDueDate(true)}
+                  className="text-sm text-gray-900 hover:bg-gray-100 px-2 py-1 rounded -ml-2"
+                  disabled={isUpdating}
+                >
+                  {task.dueOn ? (
+                    <>
+                      {new Date(task.dueOn).toLocaleDateString(undefined, {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                      {task.dueAt && (
+                        <span className="text-gray-500">
+                          {' '}at {new Date(task.dueAt).toLocaleTimeString([], {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-gray-400">Set due date</span>
+                  )}
+                </button>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Projects */}
           {task.projectNames.length > 0 && (
@@ -272,6 +382,11 @@ function App() {
     await window.openai?.requestDisplayMode?.({ mode: 'inline' });
   };
 
+  const handleTaskUpdate = (updatedTask: TaskDetailType) => {
+    console.log('[Widget] handleTaskUpdate called with:', updatedTask);
+    setSelectedTask(updatedTask);
+  };
+
   if (output === null || !output.workspace) {
     return (
       <div className="w-full p-4 border border-gray-200 rounded-lg bg-white">
@@ -287,7 +402,13 @@ function App() {
 
   // Show task detail view
   if (selectedTask) {
-    return <TaskDetail task={selectedTask} onBack={handleBack} />;
+    return (
+      <TaskDetail
+        task={selectedTask}
+        onBack={handleBack}
+        onTaskUpdate={handleTaskUpdate}
+      />
+    );
   }
 
   return (
