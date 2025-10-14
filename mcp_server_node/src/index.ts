@@ -25,9 +25,10 @@ app.use(express.json());
 console.log('✓ JSON middleware added');
 
 // Register specific routes FIRST before wildcard handlers
-app.get('/health', (_req, res) =>
-  res.status(200).json({ status: 'ok', service: 'asana-chatgpt-app-mcp' })
-);
+app.get('/health', (_req, res) => {
+  console.log('🏥 /health route HIT!');
+  res.status(200).json({ status: 'ok', service: 'asana-chatgpt-app-mcp' });
+});
 console.log('✓ /health route registered');
 
 app.get('/oauth/callback', async (req, res) => {
