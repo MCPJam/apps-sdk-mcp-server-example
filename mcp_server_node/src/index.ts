@@ -24,27 +24,7 @@ if (!authDomain) {
 app.use(express.json());
 console.log('✓ JSON middleware added');
 
-app.use(
-  '/.well-known/oauth-protected-resource',
-  metadataHandler(async (req) => {
-    const serverOrigin = resolveServerOrigin(req);
-    return {
-      resource: new URL(serverOrigin).href,
-      authorization_servers: [authDomain],
-      scopes_supported: ['openid', 'email', 'profile'],
-    };
-  })
-);
-
-app.use(
-  '/.well-known/oauth-authorization-server',
-  metadataHandler(async (_req) =>
-    fetch(new URL('/.well-known/oauth-authorization-server', authDomain)).then(
-      (res) => res.json()
-    )
-  )
-);
-
+// Register specific routes FIRST before wildcard handlers
 app.get('/health', (_req, res) =>
   res.status(200).json({ status: 'ok', service: 'asana-chatgpt-app-mcp' })
 );
@@ -101,6 +81,28 @@ app.get('/oauth/callback', async (req, res) => {
   }
 });
 console.log('✓ /oauth/callback route registered');
+
+// Register .well-known handlers AFTER specific routes to avoid wildcard conflicts
+app.use(
+  '/.well-known/oauth-protected-resource',
+  metadataHandler(async (req) => {
+    const serverOrigin = resolveServerOrigin(req);
+    return {
+      resource: new URL(serverOrigin).href,
+      authorization_servers: [authDomain],
+      scopes_supported: ['openid', 'email', 'profile'],
+    };
+  })
+);
+
+app.use(
+  '/.well-known/oauth-authorization-server',
+  metadataHandler(async (_req) =>
+    fetch(new URL('/.well-known/oauth-authorization-server', authDomain)).then(
+      (res) => res.json()
+    )
+  )
+);
 
 const bearerAuthMiddleware = requireBearerAuth({
   verifier: {
