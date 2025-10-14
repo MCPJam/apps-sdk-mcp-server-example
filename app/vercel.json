@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd .. && pnpm install && cd widgets && pnpm build && cd ../app && mkdir -p public && cp ../widgets/dist/tasks.* ../widgets/dist/asana.png public/ && pnpm build",
+  "buildCommand": "cd .. && pnpm install && pnpm --filter asana-chatgpt-widgets build && cd app && mkdir -p public && cp ../widgets/dist/tasks.* ../widgets/dist/asana.png public/ && pnpm build",
   "devCommand": "vite --port $PORT",
   "installCommand": "pnpm install",
   "framework": null,
