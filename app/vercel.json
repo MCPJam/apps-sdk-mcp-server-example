@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd ../widgets && pnpm install && pnpm run build && cd ../app && mkdir -p public && cp ../widgets/dist/tasks.* ../widgets/dist/asana.png public/ && pnpm install && pnpm run build",
+  "buildCommand": "cd .. && pnpm install -r && cd widgets && pnpm run build && cd ../app && mkdir -p public && cp ../widgets/dist/tasks.* ../widgets/dist/asana.png public/ && pnpm run build",
   "devCommand": "vite --port $PORT",
   "installCommand": "pnpm install",
   "framework": null,
