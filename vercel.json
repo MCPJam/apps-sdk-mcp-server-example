@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm install --frozen-lockfile && cd widgets && pnpm run build && cd .. && mkdir -p app/public && cp widgets/dist/tasks.* widgets/tasks/asana.png app/public/ && cd app && pnpm run build",
+  "buildCommand": "pnpm install --frozen-lockfile && pnpm --filter asana-chatgpt-widgets run build && mkdir -p app/public && cp widgets/dist/tasks.* widgets/tasks/asana.png app/public/ && pnpm --filter asana-chatgpt-app-web run build",
   "installCommand": "pnpm install --frozen-lockfile",
   "outputDirectory": "app/dist",
   "framework": null,

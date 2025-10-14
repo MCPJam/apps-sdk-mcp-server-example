@@ -1,5 +1,6 @@
 packages:
   - 'app'
   - 'mcp_server_node'
+  - 'widgets'
   - 'widgets/*'
   - 'shared-types'
