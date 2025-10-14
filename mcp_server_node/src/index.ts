@@ -59,14 +59,14 @@ app.get('/oauth/callback', async (req, res) => {
     if (error) {
       console.error('OAuth callback received error:', error);
       return res.redirect(
-        `http://localhost:3011/?error=${encodeURIComponent(error)}`
+        `${config.FRONTEND_DOMAIN}/?error=${encodeURIComponent(error)}`
       );
     }
 
     if (!code || !state) {
       console.error('Missing code or state parameter');
       return res.redirect(
-        `http://localhost:3011/?error=${encodeURIComponent('Missing code or state parameter')}`
+        `${config.FRONTEND_DOMAIN}/?error=${encodeURIComponent('Missing code or state parameter')}`
       );
     }
 
@@ -86,13 +86,13 @@ app.get('/oauth/callback', async (req, res) => {
     console.log('✓ OAuth callback completed successfully');
 
     // Redirect back to frontend with success
-    res.redirect('http://localhost:3011/?asana_connected=true');
+    res.redirect(`${config.FRONTEND_DOMAIN}/?asana_connected=true`);
   } catch (error) {
     console.error('OAuth callback error:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error during Asana authorization';
     res.redirect(
-      `http://localhost:3011/?error=${encodeURIComponent(errorMessage)}`
+      `${config.FRONTEND_DOMAIN}/?error=${encodeURIComponent(errorMessage)}`
     );
   }
 });
