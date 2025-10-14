@@ -108,7 +108,7 @@ export function Authorize() {
           <div className="px-6 py-6">
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <p className="text-sm text-gray-900 mb-3">
-                <strong className="font-semibold">{authInfo?.client_name || 'Unofficial Asana Apps SDK MCP Server'}</strong> wants to access your Asana account.
+                <strong className="font-semibold">{authInfo?.client_name || 'Unofficial Asana MCP Server'}</strong> wants to access your Asana account.
               </p>
               <p className="text-sm text-gray-600 mb-2">
                 This will allow the application to:
