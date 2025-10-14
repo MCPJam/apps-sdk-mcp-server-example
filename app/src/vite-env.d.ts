@@ -2,7 +2,6 @@
 
 interface ImportMetaEnv {
   readonly VITE_STYTCH_PUBLIC_TOKEN: string
-  readonly VITE_BACKEND_URL: string
 }
 
 interface ImportMeta {
