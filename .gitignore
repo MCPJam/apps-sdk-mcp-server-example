@@ -10,6 +10,7 @@ out/
 .next/
 .vercel
 *.tsbuildinfo
+app/public/
 
 # Environment variables
 .env
