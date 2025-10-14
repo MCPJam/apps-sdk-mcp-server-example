@@ -3,7 +3,7 @@ import { useStytchUser } from '@stytch/react';
 
 export function AsanaAuthorize() {
   const { user } = useStytchUser();
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {

@@ -2,12 +2,10 @@ import { useMemo, useEffect } from 'react';
 import {
   StytchLogin,
   useStytchUser,
-  type StytchLoginConfig,
 } from '@stytch/react';
 import {
   Products,
   OAuthProviders,
-  OTPMethods,
   type StytchEvent,
 } from '@stytch/vanilla-js';
 
@@ -22,7 +20,7 @@ export function Login() {
     }
   }, [user]);
 
-  const loginConfig = useMemo<StytchLoginConfig>(
+  const loginConfig = useMemo(
     () => ({
       products: [Products.oauth],
       oauthOptions: {
