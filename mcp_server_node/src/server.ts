@@ -2,6 +2,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import {
+  type GetTaskInput,
+  type GetTaskResult,
   type ListTasksDueTodayInput,
   type SearchTasksInput,
   type SearchTasksResult,
@@ -28,6 +30,10 @@ const searchTasksInputSchema = z.object({
   completed: z.boolean().optional(),
   limit: z.number().optional(),
 }) satisfies z.ZodType<SearchTasksInput>;
+
+const getTaskInputSchema = z.object({
+  taskGid: z.string().min(1, 'taskGid is required'),
+}) satisfies z.ZodType<GetTaskInput>;
 
 const registerAuthCodeSchema = z.object({
   code: z.string().min(6),
@@ -219,6 +225,34 @@ export function createServer(): McpServer {
       return {
         content: [{ type: 'text', text: summary }],
         structuredContent: result satisfies SearchTasksResult,
+      };
+    }
+  );
+
+  server.registerTool(
+    'get-task',
+    {
+      title: 'Get task details',
+      description: 'Retrieves detailed information about a single Asana task including notes, tags, and timestamps.',
+      annotations: { readOnlyHint: true },
+      inputSchema: {
+        taskGid: z.string().min(1).describe('The task GID to retrieve'),
+      },
+    },
+    async (input, { authInfo }) => {
+      const validatedInput = getTaskInputSchema.parse(input);
+      const userId = ensureAuthorized(authInfo);
+      const client = new AsanaClient(userId);
+      const result = await client.getTask(validatedInput);
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Retrieved task: ${result.task.name}`,
+          },
+        ],
+        structuredContent: result satisfies GetTaskResult,
       };
     }
   );

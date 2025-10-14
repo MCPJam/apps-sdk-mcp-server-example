@@ -4,7 +4,11 @@ export type SetGlobalsEvent = CustomEvent<{
   globals: Partial<OpenAiGlobals>;
 }>;
 
-export type DisplayMode = 'INLINE' | 'FULLSCREEN';
+export type DisplayMode = 'INLINE' | 'FULLSCREEN' | 'pip' | 'inline' | 'fullscreen';
+
+export type CallToolResponse = {
+  result: string;
+};
 
 export type OpenAiGlobals = {
   toolInput: unknown;
@@ -18,8 +22,10 @@ export type OpenAiGlobals = {
 declare global {
   interface Window {
     openai?: Partial<OpenAiGlobals> & {
-      sendFollowUpMessage?: (params: { prompt: string }) => void;
+      sendFollowUpMessage?: (params: { prompt: string }) => Promise<void>;
       setDisplayMode?: (mode: DisplayMode) => void;
+      callTool?: (name: string, args: Record<string, unknown>) => Promise<CallToolResponse>;
+      requestDisplayMode?: (params: { mode: DisplayMode }) => Promise<{ mode: DisplayMode }>;
     };
   }
 }

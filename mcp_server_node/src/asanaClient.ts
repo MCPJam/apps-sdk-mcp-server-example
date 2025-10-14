@@ -1,8 +1,11 @@
 import axios, { type AxiosInstance, AxiosHeaders } from 'axios';
 import {
+  type GetTaskInput,
+  type GetTaskResult,
   type ListTasksDueTodayInput,
   type SearchTasksInput,
   type SearchTasksResult,
+  type TaskDetail,
   type TaskDueToday,
   type TaskListResult,
   type WorkspaceListResult,
@@ -33,6 +36,13 @@ type AsanaTask = {
     photo?: { image_60x60?: string | null } | null;
   } | null;
   memberships?: { project?: { name?: string } | null }[];
+};
+
+type AsanaTaskDetail = AsanaTask & {
+  notes?: string | null;
+  created_at: string;
+  modified_at: string;
+  tags?: { gid: string; name: string }[];
 };
 
 export class AsanaClient {
@@ -216,6 +226,63 @@ export class AsanaClient {
       fetchedAtIso: new Date().toISOString(),
       tasks,
       taskCount: tasks.length,
+    };
+  }
+
+  async getTask(input: GetTaskInput): Promise<GetTaskResult> {
+    console.log('[AsanaClient] getTask for gid:', input.taskGid);
+
+    const requestParams = {
+      opt_fields:
+        'gid,name,completed,due_on,due_at,permalink_url,notes,created_at,modified_at,assignee.gid,assignee.name,assignee.email,assignee.photo.image_60x60,memberships.project.name,tags.gid,tags.name',
+    };
+
+    let response;
+    try {
+      response = await this.http.get<{ data: AsanaTaskDetail }>(
+        `/tasks/${input.taskGid}`,
+        { params: requestParams }
+      );
+    } catch (error) {
+      console.error('[AsanaClient] ❌ getTask failed');
+      if (axios.isAxiosError(error)) {
+        console.error('[AsanaClient] Status:', error.response?.status);
+        console.error('[AsanaClient] Response data:', JSON.stringify(error.response?.data, null, 2));
+        console.error('[AsanaClient] Request URL:', error.config?.url);
+      }
+      throw error;
+    }
+
+    console.log('[AsanaClient] ✓ getTask succeeded:', response.data.data.name);
+
+    const taskData = response.data.data;
+    const task: TaskDetail = {
+      gid: taskData.gid,
+      name: taskData.name,
+      completed: taskData.completed,
+      permalinkUrl: taskData.permalink_url,
+      notes: taskData.notes,
+      dueOn: taskData.due_on,
+      dueAt: taskData.due_at,
+      createdAt: taskData.created_at,
+      modifiedAt: taskData.modified_at,
+      assignee: taskData.assignee
+        ? {
+            gid: taskData.assignee.gid,
+            name: taskData.assignee.name,
+            email: taskData.assignee.email ?? null,
+            photoUrl: taskData.assignee.photo?.image_60x60 ?? null,
+          }
+        : null,
+      projectNames: (taskData.memberships ?? [])
+        .map((membership) => membership.project?.name)
+        .filter((name): name is string => Boolean(name)),
+      tags: taskData.tags,
+    };
+
+    return {
+      task,
+      fetchedAtIso: new Date().toISOString(),
     };
   }
 

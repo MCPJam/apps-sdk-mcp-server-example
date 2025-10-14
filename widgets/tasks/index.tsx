@@ -1,41 +1,57 @@
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import { useToolOutput } from '../utils/use-tool-output.ts';
-import type { TaskListResult, TaskDueToday } from '@asana-chatgpt-app/shared-types';
+import type { TaskListResult, TaskDueToday, TaskDetail as TaskDetailType, GetTaskResult } from '@asana-chatgpt-app/shared-types';
 import { useState } from 'react';
 
-function TaskDetail({ task, onBack }: { task: TaskDueToday; onBack: () => void }) {
+function TaskDetail({ task, onBack }: { task: TaskDetailType; onBack: () => void }) {
   return (
-    <div className="w-full max-w-3xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200 bg-white">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-          </svg>
-          <span className="text-sm font-medium">Back to list</span>
-        </button>
+    <div className="w-full h-full bg-white">
+      {/* Header with Back Button */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-3">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="text-sm font-medium">Back to list</span>
+          </button>
+
+          <a
+            href={task.permalinkUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+          >
+            Open in Asana
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        </div>
       </div>
 
       {/* Task Detail Content */}
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        {/* Task Title */}
+      <div className="max-w-4xl mx-auto px-8 py-6">
+        {/* Task Title with Checkbox */}
         <div className="mb-6">
           <div className="flex items-start gap-3">
-            <div className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center ${
-              task.completed ? 'bg-green-500 border-green-500' : 'border-gray-300'
+            <button className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+              task.completed
+                ? 'bg-green-500 border-green-500'
+                : 'border-gray-400 hover:border-green-500'
             }`}>
               {task.completed && (
                 <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                 </svg>
               )}
-            </div>
+            </button>
             <div className="flex-1">
-              <h1 className={`text-2xl font-semibold ${
+              <h1 className={`text-2xl font-semibold leading-8 ${
                 task.completed ? 'text-gray-500 line-through' : 'text-gray-900'
               }`}>
                 {task.name}
@@ -44,28 +60,28 @@ function TaskDetail({ task, onBack }: { task: TaskDueToday; onBack: () => void }
           </div>
         </div>
 
-        {/* Task Metadata Grid */}
-        <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+        {/* Task Metadata - Asana Style */}
+        <div className="space-y-0 divide-y divide-gray-200 border-t border-gray-200">
           {/* Assignee */}
           {task.assignee && (
-            <div className="flex items-start gap-4">
-              <div className="w-24 text-sm font-medium text-gray-600">Assignee</div>
-              <div className="flex items-center gap-3">
+            <div className="flex items-center py-3">
+              <div className="w-28 text-xs font-semibold text-gray-500 shrink-0">Assignee</div>
+              <div className="flex-1 flex items-center gap-2">
                 {task.assignee.photoUrl ? (
                   <img
                     src={task.assignee.photoUrl}
                     alt={task.assignee.name}
-                    className="w-8 h-8 rounded-full"
+                    className="w-6 h-6 rounded-full"
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center">
+                    <svg className="w-3.5 h-3.5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                     </svg>
                   </div>
                 )}
                 <div>
-                  <div className="text-sm font-medium text-gray-900">{task.assignee.name}</div>
+                  <div className="text-sm text-gray-900">{task.assignee.name}</div>
                   {task.assignee.email && (
                     <div className="text-xs text-gray-500">{task.assignee.email}</div>
                   )}
@@ -76,28 +92,23 @@ function TaskDetail({ task, onBack }: { task: TaskDueToday; onBack: () => void }
 
           {/* Due Date */}
           {task.dueOn && (
-            <div className="flex items-start gap-4">
-              <div className="w-24 text-sm font-medium text-gray-600">Due date</div>
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <div>
-                  <div className="text-sm text-gray-900">
-                    {new Date(task.dueOn).toLocaleDateString(undefined, {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </div>
+            <div className="flex items-center py-3">
+              <div className="w-28 text-xs font-semibold text-gray-500 shrink-0">Due date</div>
+              <div className="flex-1">
+                <div className="text-sm text-gray-900">
+                  {new Date(task.dueOn).toLocaleDateString(undefined, {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
                   {task.dueAt && (
-                    <div className="text-xs text-gray-500">
-                      at {new Date(task.dueAt).toLocaleTimeString([], {
-                        hour: '2-digit',
+                    <span className="text-gray-500">
+                      {' '}at {new Date(task.dueAt).toLocaleTimeString([], {
+                        hour: 'numeric',
                         minute: '2-digit',
                       })}
-                    </div>
+                    </span>
                   )}
                 </div>
               </div>
@@ -106,57 +117,92 @@ function TaskDetail({ task, onBack }: { task: TaskDueToday; onBack: () => void }
 
           {/* Projects */}
           {task.projectNames.length > 0 && (
-            <div className="flex items-start gap-4">
-              <div className="w-24 text-sm font-medium text-gray-600">
+            <div className="flex items-start py-3">
+              <div className="w-28 text-xs font-semibold text-gray-500 shrink-0 pt-0.5">
                 {task.projectNames.length === 1 ? 'Project' : 'Projects'}
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex-1 space-y-1.5">
                 {task.projectNames.map((projectName, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 rounded-full text-sm text-gray-700"
-                  >
-                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div key={idx} className="flex items-center gap-2 text-sm text-gray-900">
+                    <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                     </svg>
                     {projectName}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tags */}
+          {task.tags && task.tags.length > 0 && (
+            <div className="flex items-start py-3">
+              <div className="w-28 text-xs font-semibold text-gray-500 shrink-0 pt-0.5">Tags</div>
+              <div className="flex-1 flex flex-wrap gap-1.5">
+                {task.tags.map((tag) => (
+                  <span
+                    key={tag.gid}
+                    className="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs"
+                  >
+                    {tag.name}
                   </span>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Status */}
-          <div className="flex items-start gap-4">
-            <div className="w-24 text-sm font-medium text-gray-600">Status</div>
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${
-              task.completed
-                ? 'bg-green-100 text-green-800'
-                : 'bg-yellow-100 text-yellow-800'
-            }`}>
-              {task.completed ? 'Completed' : 'In Progress'}
-            </span>
-          </div>
+          {/* Created */}
+          {task.createdAt && (
+            <div className="flex items-center py-3">
+              <div className="w-28 text-xs font-semibold text-gray-500 shrink-0">Created</div>
+              <div className="flex-1 text-sm text-gray-900">
+                {new Date(task.createdAt).toLocaleDateString(undefined, {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Modified */}
+          {task.modifiedAt && (
+            <div className="flex items-center py-3">
+              <div className="w-28 text-xs font-semibold text-gray-500 shrink-0">Modified</div>
+              <div className="flex-1 text-sm text-gray-900">
+                {new Date(task.modifiedAt).toLocaleDateString(undefined, {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Open in Asana Button */}
-        <div className="mt-8">
-          <a
-            href={task.permalinkUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#f06a6a] hover:bg-[#e05555] text-white font-medium rounded-lg transition-colors"
-          >
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/3/3b/Asana_logo.svg"
-              alt="Asana"
-              className="h-4 brightness-0 invert"
-            />
-            <span>Open in Asana</span>
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-          </a>
+        {/* Description Section */}
+        <div className="mt-6 border-t border-gray-200 pt-6">
+          <h3 className="text-xs font-semibold text-gray-500 mb-2">Description</h3>
+          {task.notes && task.notes.trim() ? (
+            <div className="text-sm text-gray-900 whitespace-pre-wrap leading-normal">
+              {task.notes}
+            </div>
+          ) : (
+            <div className="text-sm text-gray-400">
+              No description
+            </div>
+          )}
+        </div>
+
+        {/* Task ID for reference */}
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <div className="text-xs text-gray-400">
+            Task ID: {task.gid}
+          </div>
         </div>
       </div>
     </div>
@@ -165,14 +211,65 @@ function TaskDetail({ task, onBack }: { task: TaskDueToday; onBack: () => void }
 
 function App() {
   const output = useToolOutput<TaskListResult>();
-  const [selectedTask, setSelectedTask] = useState<TaskDueToday | null>(null);
+  const [selectedTask, setSelectedTask] = useState<TaskDetailType | null>(null);
 
-  const handleTaskClick = (task: TaskDueToday) => {
-    setSelectedTask(task);
+  const handleTaskClick = async (task: TaskDueToday) => {
+    console.log('[Widget] handleTaskClick called for task:', task.name);
+
+    try {
+      // Request fullscreen mode
+      if (window.openai?.requestDisplayMode) {
+        await window.openai.requestDisplayMode({ mode: 'fullscreen' });
+      }
+
+      // Call the get-task tool to fetch detailed information
+      if (window.openai?.callTool) {
+        const response = await window.openai.callTool('get-task', {
+          taskGid: task.gid,
+        });
+        console.log('[Widget] callTool response:', response);
+
+        // Parse the JSON string result
+        if (response?.result) {
+          try {
+            const parsed = JSON.parse(response.result) as GetTaskResult;
+            console.log('[Widget] Parsed result:', parsed);
+
+            if (parsed?.task) {
+              setSelectedTask(parsed.task);
+              return;
+            }
+          } catch (parseError) {
+            console.error('[Widget] Failed to parse result:', parseError);
+          }
+        }
+      }
+
+      // Fallback: show basic task info
+      setSelectedTask({
+        ...task,
+        notes: null,
+        createdAt: '',
+        modifiedAt: '',
+        tags: [],
+      });
+    } catch (error) {
+      console.error('[Widget] Error:', error);
+      // Fallback: show basic task info
+      setSelectedTask({
+        ...task,
+        notes: null,
+        createdAt: '',
+        modifiedAt: '',
+        tags: [],
+      });
+    }
   };
 
-  const handleBack = () => {
+  const handleBack = async () => {
     setSelectedTask(null);
+    // Request inline mode when going back
+    await window.openai?.requestDisplayMode?.({ mode: 'inline' });
   };
 
   if (output === null || !output.workspace) {
@@ -188,7 +285,7 @@ function App() {
 
   const { workspace, tasks, taskCount, fetchedAtIso } = output;
 
-  // Show task detail view inline
+  // Show task detail view
   if (selectedTask) {
     return <TaskDetail task={selectedTask} onBack={handleBack} />;
   }

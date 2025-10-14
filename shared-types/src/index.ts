@@ -56,6 +56,30 @@ export type SearchTasksResult = {
   taskCount: number;
 };
 
+export type TaskDetail = {
+  gid: string;
+  name: string;
+  completed: boolean;
+  permalinkUrl: string;
+  notes?: string | null;
+  dueOn: string | null;
+  dueAt?: string | null;
+  createdAt: string;
+  modifiedAt: string;
+  assignee?: TaskAssignee | null;
+  projectNames: string[];
+  tags?: { gid: string; name: string }[];
+};
+
+export type GetTaskInput = {
+  taskGid: string;
+};
+
+export type GetTaskResult = {
+  task: TaskDetail;
+  fetchedAtIso: string;
+};
+
 export type TaskWidgetState = {
   selectedWorkspaceGid: string | null;
   includeCompleted?: boolean;
