@@ -117,7 +117,7 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/authenticate" element={<Authenticate />} />
       <Route
-        path="/authorize"
+        path="/oauth/authorize"
         element={
           <ProtectedRoute>
             <Authorize />
