@@ -4,6 +4,7 @@ import { StytchProvider } from '@stytch/react';
 import { StytchUIClient } from '@stytch/vanilla-js';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import './index.css';
 
 const stytch = new StytchUIClient(
   import.meta.env.VITE_STYTCH_PUBLIC_TOKEN || ''
