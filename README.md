@@ -26,11 +26,11 @@ graph TD
 
 ```mermaid
 flowchart LR
-    shared-types --> mcp_server_node
-    shared-types --> widgets/tasks
-    widgets/tasks -->|built assets| ChatGPT
-    app -->|OAuth consent| Asana Users
-    mcp_server_node -->|resources/tools| ChatGPT
+    SharedTypes[shared-types] --> MCPServer[mcp_server_node]
+    SharedTypes --> TasksWidget[widgets/tasks]
+    TasksWidget -->|built assets| ChatGPT
+    App[app] -->|OAuth consent| AsanaUsers[Asana Users]
+    MCPServer -->|resources/tools| ChatGPT
 ```
 
 ---
