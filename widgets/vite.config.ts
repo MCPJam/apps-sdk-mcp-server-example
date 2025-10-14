@@ -13,8 +13,13 @@ export default defineConfig(({}) => ({
       name: 'widget-html-middleware',
       configureServer(server) {
         server.middlewares.use((req, _res, next) => {
+          // Rewrite /tasks to /tasks/index.html
           if (req.url?.startsWith('/tasks') && !req.url.includes('.')) {
             req.url = req.url.replace(/\/?$/, '/index.html');
+          }
+          // Rewrite /tasks/index.tsx to the actual file path
+          if (req.url === '/tasks/index.tsx') {
+            req.url = '/tasks/index.tsx';
           }
           next();
         });

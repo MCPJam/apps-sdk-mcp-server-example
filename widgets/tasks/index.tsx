@@ -1,18 +1,14 @@
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import { useToolOutput } from '../utils/use-tool-output.ts';
-import { useOpenAiGlobal } from '../utils/use-openai-global.ts';
 import type { TaskListResult, TaskDueToday } from '@asana-chatgpt-app/shared-types';
-import { useState, useEffect } from 'react';
-
-console.log('[Widget] Module loaded successfully');
-console.log('[Widget] React version:', import.meta.env.MODE);
+import { useState } from 'react';
 
 function TaskDetail({ task, onBack }: { task: TaskDueToday; onBack: () => void }) {
   return (
-    <div className="w-full h-full min-h-screen bg-white">
+    <div className="w-full max-w-3xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10">
+      <div className="px-6 py-4 border-b border-gray-200 bg-white">
         <button
           onClick={onBack}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
@@ -168,27 +164,16 @@ function TaskDetail({ task, onBack }: { task: TaskDueToday; onBack: () => void }
 }
 
 function App() {
-  console.log('[Widget] App component rendering');
   const output = useToolOutput<TaskListResult>();
-  const displayMode = useOpenAiGlobal('displayMode');
   const [selectedTask, setSelectedTask] = useState<TaskDueToday | null>(null);
 
   const handleTaskClick = (task: TaskDueToday) => {
     setSelectedTask(task);
-    window.openai?.setDisplayMode?.('FULLSCREEN');
   };
 
   const handleBack = () => {
     setSelectedTask(null);
-    window.openai?.setDisplayMode?.('INLINE');
   };
-
-  // Reset selected task when switching back to inline mode
-  useEffect(() => {
-    if (displayMode === 'INLINE') {
-      setSelectedTask(null);
-    }
-  }, [displayMode]);
 
   if (output === null || !output.workspace) {
     return (
@@ -203,8 +188,8 @@ function App() {
 
   const { workspace, tasks, taskCount, fetchedAtIso } = output;
 
-  // Show fullscreen task detail view
-  if (displayMode === 'FULLSCREEN' && selectedTask) {
+  // Show task detail view inline
+  if (selectedTask) {
     return <TaskDetail task={selectedTask} onBack={handleBack} />;
   }
 

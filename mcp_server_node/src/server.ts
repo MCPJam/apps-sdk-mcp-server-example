@@ -54,7 +54,9 @@ export function createServer(): McpServer {
           const response = await fetch(`${widgetBaseUrl}/tasks/`);
           let html = await response.text();
 
-          // Convert relative paths to absolute URLs
+          // Convert relative and absolute paths to absolute URLs
+          html = html.replace(/src="\.\//g, `src="${widgetBaseUrl}/tasks/`);
+          html = html.replace(/href="\.\//g, `href="${widgetBaseUrl}/tasks/`);
           html = html.replace(/src="\/(@vite|tasks)/g, `src="${widgetBaseUrl}/$1`);
           html = html.replace(/href="\/(@vite|tasks)/g, `href="${widgetBaseUrl}/$1`);
 
