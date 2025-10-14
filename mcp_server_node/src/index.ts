@@ -13,6 +13,8 @@ type AuthenticatedRequest = Request & {
 };
 
 const app = express();
+console.log('🚀 Express app created');
+
 const authDomain = process.env.STYTCH_DOMAIN;
 if (!authDomain) {
   throw new Error(
@@ -20,6 +22,7 @@ if (!authDomain) {
   );
 }
 app.use(express.json());
+console.log('✓ JSON middleware added');
 
 app.use(
   '/.well-known/oauth-protected-resource',
@@ -45,6 +48,7 @@ app.use(
 app.get('/health', (_req, res) =>
   res.status(200).json({ status: 'ok', service: 'asana-chatgpt-app-mcp' })
 );
+console.log('✓ /health route registered');
 
 app.get('/oauth/callback', async (req, res) => {
   try {
@@ -96,6 +100,7 @@ app.get('/oauth/callback', async (req, res) => {
     );
   }
 });
+console.log('✓ /oauth/callback route registered');
 
 const bearerAuthMiddleware = requireBearerAuth({
   verifier: {
@@ -135,6 +140,19 @@ app.post(
     }
   }
 );
+
+console.log('📋 Registered routes:');
+app._router.stack.forEach((middleware: any) => {
+  if (middleware.route) {
+    console.log(`  ${Object.keys(middleware.route.methods).join(',').toUpperCase()} ${middleware.route.path}`);
+  } else if (middleware.name === 'router') {
+    middleware.handle.stack.forEach((handler: any) => {
+      if (handler.route) {
+        console.log(`  ${Object.keys(handler.route.methods).join(',').toUpperCase()} ${handler.route.path}`);
+      }
+    });
+  }
+});
 
 const server = app.listen(config.MCP_HTTP_PORT, '0.0.0.0', () => {
   console.log(
