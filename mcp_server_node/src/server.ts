@@ -184,6 +184,12 @@ export function createServer(): McpServer {
       title: 'Search tasks',
       description:
         'Search for tasks in an Asana workspace using various filters like text, assignee, projects, sections, tags, and completion status.',
+      _meta: {
+        'openai/outputTemplate': 'ui://widget/tasks.html',
+        'openai/toolInvocation/invoking': 'Searching tasks…',
+        'openai/toolInvocation/invoked': 'Search results loaded.',
+        'openai/widgetAccessible': true,
+      },
       annotations: { readOnlyHint: true },
       inputSchema: {
         workspaceGid: z.string().min(1).describe('The workspace GID to search in'),
