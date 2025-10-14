@@ -20,9 +20,10 @@ export function AsanaAuthorize() {
     console.log('========================================');
 
     // Build Asana OAuth URL
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3010';
     const asanaAuthUrl = new URL('https://app.asana.com/-/oauth_authorize');
     asanaAuthUrl.searchParams.set('client_id', '1211620390541079');
-    asanaAuthUrl.searchParams.set('redirect_uri', 'http://localhost:3010/oauth/callback');
+    asanaAuthUrl.searchParams.set('redirect_uri', `${backendUrl}/oauth/callback`);
     asanaAuthUrl.searchParams.set('response_type', 'code');
     asanaAuthUrl.searchParams.set('state', user.user_id);
 
