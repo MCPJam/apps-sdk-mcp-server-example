@@ -6,7 +6,7 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/((?!api|@vite|@react-refresh|src|node_modules|@fs).*)",
+      "source": "/:path((?!api)(?!@vite)(?!@react-refresh)(?!src)(?!node_modules)(?!@fs)(?!.*\\.).*)",
       "destination": "/index.html"
     }
   ]
