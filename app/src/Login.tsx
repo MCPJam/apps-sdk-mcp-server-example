@@ -24,7 +24,7 @@ export function Login() {
     () => ({
       products: [Products.oauth],
       oauthOptions: {
-        providers: [{ type: OAuthProviders.Google }],
+        providers: [{ type: OAuthProviders.Github }],
         loginRedirectURL: window.location.origin + '/authenticate',
         signupRedirectURL: window.location.origin + '/authenticate',
       },
