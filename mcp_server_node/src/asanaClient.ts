@@ -1,6 +1,8 @@
 import axios, { type AxiosInstance, AxiosHeaders } from 'axios';
 import {
   type ListTasksDueTodayInput,
+  type SearchTasksInput,
+  type SearchTasksResult,
   type TaskDueToday,
   type TaskListResult,
   type WorkspaceListResult,
@@ -103,6 +105,89 @@ export class AsanaClient {
     }
 
     console.log('[AsanaClient] ✓ listTasksDueToday succeeded, found', response.data.data.length, 'tasks');
+
+    const tasks: TaskDueToday[] = response.data.data.map((task) => ({
+      gid: task.gid,
+      name: task.name,
+      completed: task.completed,
+      permalinkUrl: task.permalink_url,
+      dueOn: task.due_on,
+      dueAt: task.due_at,
+      assignee: task.assignee
+        ? {
+            gid: task.assignee.gid,
+            name: task.assignee.name,
+            email: task.assignee.email ?? null,
+            photoUrl: task.assignee.photo?.image_60x60 ?? null,
+          }
+        : null,
+      projectNames: (task.memberships ?? [])
+        .map((membership) => membership.project?.name)
+        .filter((name): name is string => Boolean(name)),
+    }));
+
+    const workspace = await this.getWorkspaceSummary(input.workspaceGid);
+
+    return {
+      workspace,
+      fetchedAtIso: new Date().toISOString(),
+      tasks,
+      taskCount: tasks.length,
+    };
+  }
+
+  async searchTasks(input: SearchTasksInput): Promise<SearchTasksResult> {
+    const requestParams: Record<string, string | string[] | undefined> = {
+      opt_fields:
+        'gid,name,completed,due_on,due_at,permalink_url,assignee.gid,assignee.name,assignee.email,assignee.photo.image_60x60,memberships.project.name',
+    };
+
+    // Add optional search filters
+    if (input.text) {
+      requestParams.text = input.text;
+    }
+    if (input.assigneeAny && input.assigneeAny.length > 0) {
+      requestParams['assignee.any'] = input.assigneeAny.join(',');
+    }
+    if (input.projectsAny && input.projectsAny.length > 0) {
+      requestParams['projects.any'] = input.projectsAny.join(',');
+    }
+    if (input.sectionsAny && input.sectionsAny.length > 0) {
+      requestParams['sections.any'] = input.sectionsAny.join(',');
+    }
+    if (input.tagsAny && input.tagsAny.length > 0) {
+      requestParams['tags.any'] = input.tagsAny.join(',');
+    }
+    if (input.followersAny && input.followersAny.length > 0) {
+      requestParams['followers.any'] = input.followersAny.join(',');
+    }
+    if (input.completed !== undefined) {
+      requestParams.completed = input.completed.toString();
+    }
+    if (input.limit !== undefined) {
+      requestParams.limit = Math.min(input.limit, 100).toString();
+    }
+
+    console.log('[AsanaClient] searchTasks request params:', JSON.stringify(requestParams, null, 2));
+
+    let response;
+    try {
+      response = await this.http.get<{ data: AsanaTask[] }>(
+        `/workspaces/${input.workspaceGid}/tasks/search`,
+        { params: requestParams }
+      );
+    } catch (error) {
+      console.error('[AsanaClient] ❌ searchTasks failed');
+      if (axios.isAxiosError(error)) {
+        console.error('[AsanaClient] Status:', error.response?.status);
+        console.error('[AsanaClient] Response data:', JSON.stringify(error.response?.data, null, 2));
+        console.error('[AsanaClient] Request URL:', error.config?.url);
+        console.error('[AsanaClient] Request params:', JSON.stringify(error.config?.params, null, 2));
+      }
+      throw error;
+    }
+
+    console.log('[AsanaClient] ✓ searchTasks succeeded, found', response.data.data.length, 'tasks');
 
     const tasks: TaskDueToday[] = response.data.data.map((task) => ({
       gid: task.gid,

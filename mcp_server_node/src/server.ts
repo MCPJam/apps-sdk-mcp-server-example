@@ -3,6 +3,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import {
   type ListTasksDueTodayInput,
+  type SearchTasksInput,
+  type SearchTasksResult,
   type TaskListResult,
   type WorkspaceListResult,
 } from '@asana-chatgpt-app/shared-types';
@@ -14,6 +16,18 @@ const taskInputSchema = z.object({
   workspaceGid: z.string().min(1, 'workspaceGid is required'),
   includeCompleted: z.boolean().optional(),
 }) satisfies z.ZodType<ListTasksDueTodayInput>;
+
+const searchTasksInputSchema = z.object({
+  workspaceGid: z.string().min(1, 'workspaceGid is required'),
+  text: z.string().optional(),
+  assigneeAny: z.array(z.string()).optional(),
+  projectsAny: z.array(z.string()).optional(),
+  sectionsAny: z.array(z.string()).optional(),
+  tagsAny: z.array(z.string()).optional(),
+  followersAny: z.array(z.string()).optional(),
+  completed: z.boolean().optional(),
+  limit: z.number().optional(),
+}) satisfies z.ZodType<SearchTasksInput>;
 
 const registerAuthCodeSchema = z.object({
   code: z.string().min(6),
@@ -160,6 +174,43 @@ export function createServer(): McpServer {
       return {
         content: [{ type: 'text', text: summary }],
         structuredContent: result satisfies TaskListResult,
+      };
+    }
+  );
+
+  server.registerTool(
+    'search-tasks',
+    {
+      title: 'Search tasks',
+      description:
+        'Search for tasks in an Asana workspace using various filters like text, assignee, projects, sections, tags, and completion status.',
+      annotations: { readOnlyHint: true },
+      inputSchema: {
+        workspaceGid: z.string().min(1).describe('The workspace GID to search in'),
+        text: z.string().optional().describe('Text to search for in task names and descriptions'),
+        assigneeAny: z.array(z.string()).optional().describe('Filter by assignee GIDs'),
+        projectsAny: z.array(z.string()).optional().describe('Filter by project GIDs'),
+        sectionsAny: z.array(z.string()).optional().describe('Filter by section GIDs'),
+        tagsAny: z.array(z.string()).optional().describe('Filter by tag GIDs'),
+        followersAny: z.array(z.string()).optional().describe('Filter by follower GIDs'),
+        completed: z.boolean().optional().describe('Filter by completion status'),
+        limit: z.number().optional().describe('Maximum number of results (max 100)'),
+      },
+    },
+    async (input, { authInfo }) => {
+      const validatedInput = searchTasksInputSchema.parse(input);
+      const userId = ensureAuthorized(authInfo);
+      const client = new AsanaClient(userId);
+      const result = await client.searchTasks(validatedInput);
+
+      const summary =
+        result.taskCount === 0
+          ? 'No tasks found matching the search criteria.'
+          : `Found ${result.taskCount} task${result.taskCount === 1 ? '' : 's'} matching the search criteria.`;
+
+      return {
+        content: [{ type: 'text', text: summary }],
+        structuredContent: result satisfies SearchTasksResult,
       };
     }
   );

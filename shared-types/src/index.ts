@@ -37,6 +37,25 @@ export type ListTasksDueTodayInput = {
   includeCompleted?: boolean;
 };
 
+export type SearchTasksInput = {
+  workspaceGid: string;
+  text?: string;
+  assigneeAny?: string[];
+  projectsAny?: string[];
+  sectionsAny?: string[];
+  tagsAny?: string[];
+  followersAny?: string[];
+  completed?: boolean;
+  limit?: number;
+};
+
+export type SearchTasksResult = {
+  workspace: WorkspaceSummary;
+  fetchedAtIso: string;
+  tasks: TaskDueToday[];
+  taskCount: number;
+};
+
 export type TaskWidgetState = {
   selectedWorkspaceGid: string | null;
   includeCompleted?: boolean;
