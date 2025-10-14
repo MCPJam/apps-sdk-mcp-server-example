@@ -13,13 +13,13 @@ An OpenAI Apps SDK experience that mirrors the Chatagotchi architecture, repurpo
 
 ```mermaid
 graph TD
-    ChatGPT[ChatGPT Apps SDK runtime] -->|invoke tools| MCPServer[MCP Server\n(mcp_server_node)]
+    ChatGPT[ChatGPT Apps SDK runtime] -->|invoke tools| MCPServer[MCP Server]
     MCPServer -->|REST| AsanaAPI[Asana REST API]
-    MCPServer -->|structuredContent| TasksWidget[Tasks Widget\nwidgets/tasks]
+    MCPServer -->|structuredContent| TasksWidget[Tasks Widget]
     TasksWidget -->|iframe render| ChatGPT
-    ChatGPT -->|OAuth redirect| OAuthApp[React OAuth App\napp/]
+    ChatGPT -->|OAuth redirect| OAuthApp[React OAuth App]
     OAuthApp -->|authorization code| MCPServer
-    MCPServer -->|token storage| TokenStore[.data/asana-tokens.json]
+    MCPServer -->|token storage| TokenStore[Token Store]
 ```
 
 ### Package Relationships
