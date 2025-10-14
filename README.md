@@ -1,11 +1,12 @@
 # Asana ChatGPT App
 
-An OpenAI Apps SDK experience that mirrors the Chatagotchi architecture, repurposed to list Asana tasks due today. The project is split into a pnpm workspace with four packages:
+An OpenAI Apps SDK MCP server that integrates Asana tasks with ChatGPT. Users authenticate via Stytch OAuth, then connect their Asana account to view tasks due today in an interactive widget. The project is a pnpm workspace with four packages plus Vercel serverless functions:
 
-- `app/` – React marketing + OAuth consent site (scaffolded for future work).
-- `mcp_server_node/` – MCP HTTP server that handles OAuth, fetches Asana data, and exposes tools/resources to ChatGPT.
-- `widgets/` – Web widgets rendered by ChatGPT through the Apps SDK (currently focused on the tasks micro-frontend).
-- `shared-types/` – TypeScript contracts shared by the server and widget packages.
+- `app/` – React frontend with Stytch authentication and Asana OAuth authorization flow.
+- `mcp_server_node/` – MCP HTTP server that exposes Asana tools/resources to ChatGPT. Uses Stytch for user authentication and stores Asana tokens in Stytch user metadata.
+- `widgets/` – Tasks widget rendered by ChatGPT through the Apps SDK, built with React.
+- `shared-types/` – TypeScript types shared across packages (tasks, workspaces, widget state).
+- `api/` – Vercel serverless functions for Asana OAuth callback handling.
 
 ---
 
@@ -14,12 +15,16 @@ An OpenAI Apps SDK experience that mirrors the Chatagotchi architecture, repurpo
 ```mermaid
 graph TD
     ChatGPT[ChatGPT Apps SDK runtime] -->|invoke tools| MCPServer[MCP Server]
-    MCPServer -->|REST| AsanaAPI[Asana REST API]
+    MCPServer -->|authenticate user| Stytch[Stytch OAuth]
+    MCPServer -->|REST API| AsanaAPI[Asana REST API]
     MCPServer -->|structuredContent| TasksWidget[Tasks Widget]
     TasksWidget -->|iframe render| ChatGPT
-    ChatGPT -->|OAuth redirect| OAuthApp[React OAuth App]
-    OAuthApp -->|authorization code| MCPServer
-    MCPServer -->|token storage| TokenStore[Token Store]
+    ChatGPT -->|OAuth redirect| ReactApp[React App]
+    ReactApp -->|Stytch login| Stytch
+    ReactApp -->|Asana OAuth| AsanaOAuth[Asana OAuth]
+    AsanaOAuth -->|callback| VercelAPI[Vercel API Function]
+    VercelAPI -->|store tokens| Stytch
+    MCPServer -->|retrieve tokens| Stytch
 ```
 
 ### Package Relationships
@@ -28,9 +33,11 @@ graph TD
 flowchart LR
     SharedTypes[shared-types] --> MCPServer[mcp_server_node]
     SharedTypes --> TasksWidget[widgets/tasks]
-    TasksWidget -->|built assets| ChatGPT
-    App[app] -->|OAuth consent| AsanaUsers[Asana Users]
-    MCPServer -->|resources/tools| ChatGPT
+    Widgets[widgets] -->|builds| TasksWidget
+    TasksWidget -->|iframe widget| ChatGPT
+    App[app] -->|Stytch + Asana OAuth| Users[Users]
+    MCPServer -->|MCP tools/resources| ChatGPT
+    API[api/asana] -->|OAuth callback| Stytch[Stytch]
 ```
 
 ---
@@ -39,23 +46,36 @@ flowchart LR
 
 ```
 asana-chatgpt-app/
-├─ package.json              # workspace root
-├─ pnpm-workspace.yaml
+├─ package.json              # Workspace root
+├─ pnpm-workspace.yaml       # Workspace configuration
+├─ vercel.json               # Vercel deployment config
+├─ api/
+│  └─ asana/
+│     └─ callback.ts         # Vercel function for Asana OAuth callback
 ├─ shared-types/
-│  └─ src/index.ts           # Task & workspace contracts
+│  └─ src/index.ts           # Shared TypeScript types
 ├─ mcp_server_node/
-│  ├─ src/config.ts          # Env validation
-│  ├─ src/tokenStore.ts      # Local JSON token persistence
-│  ├─ src/asanaClient.ts     # REST integration + OAuth exchange
+│  ├─ src/config.ts          # Environment variable validation
+│  ├─ src/auth.ts            # Auth helpers
+│  ├─ src/stytch.ts          # Stytch client & user metadata operations
+│  ├─ src/tokenStore.ts      # Token retrieval from Stytch
+│  ├─ src/asanaClient.ts     # Asana REST API client
 │  ├─ src/server.ts          # MCP tool/resource registrations
-│  └─ src/index.ts           # HTTP entrypoint (Streamable transport)
+│  └─ src/index.ts           # HTTP server entrypoint
 ├─ widgets/
+│  ├─ package.json           # Widget package config
+│  ├─ vite.config.ts         # Vite build configuration
 │  └─ tasks/
-│     ├─ index.html          # Skybridge shell
-│     ├─ src/App.tsx         # Widget UI (to be expanded)
-│     └─ src/main.tsx        # React bootstrap
+│     ├─ index.html          # Widget entry point
+│     └─ index.tsx           # React widget UI
 └─ app/
-   └─ ... (React OAuth shell scaffolding)
+   ├─ package.json
+   └─ src/
+      ├─ App.tsx             # Main app with routes
+      ├─ Login.tsx           # Stytch login page
+      ├─ Authenticate.tsx    # Stytch auth callback
+      ├─ Authorize.tsx       # MCP OAuth authorize
+      └─ AsanaAuthorize.tsx  # Asana OAuth initiation
 ```
 
 ---
@@ -67,18 +87,35 @@ asana-chatgpt-app/
 | Variable | Description |
 | --- | --- |
 | `MCP_HTTP_PORT` | Port for the MCP HTTP server (default `3000`). |
+| `STYTCH_PROJECT_ID` | Stytch project ID for OAuth authentication. |
+| `STYTCH_PROJECT_SECRET` | Stytch project secret. |
+| `STYTCH_DOMAIN` | Stytch API domain (default `https://api.stytch.com`). |
 | `ASANA_CLIENT_ID` | OAuth client ID from Asana developer console. |
-| `ASANA_CLIENT_SECRET` | OAuth client secret. |
-| `ASANA_REDIRECT_URI` | Redirect URI configured in Asana (points to `app/`). |
-| `ASANA_BASE_URL` | Asana API base (default `https://app.asana.com/api/1.0`). |
-| `ASANA_OAUTH_AUTHORIZE_URL` | OAuth authorize endpoint (default `https://app.asana.com/-/oauth_authorize`). |
-| `ASANA_OAUTH_TOKEN_URL` | OAuth token endpoint (default `https://app.asana.com/-/oauth_token`). |
-| `FRONTEND_DOMAIN` | Public URL for the marketing/OAuth site. |
-| `WIDGETS_BASE_URL` | Public URL serving widget assets (e.g., Vercel). |
-| `ASANA_TOKEN_STORE_PATH` | Optional path for token JSON file (defaults to `.data/asana-tokens.json`). |
-| `DEVELOPER_SHARED_SECRET` | Optional shared secret for securing local MCP calls. |
+| `ASANA_CLIENT_SECRET` | OAuth client secret from Asana. |
+| `ASANA_REDIRECT_URI` | Redirect URI for Asana OAuth (points to Vercel function). |
+| `ASANA_BASE_URL` | Asana API base URL (default `https://app.asana.com/api/1.0`). |
+| `ASANA_OAUTH_AUTHORIZE_URL` | Asana OAuth authorize endpoint (default `https://app.asana.com/-/oauth_authorize`). |
+| `ASANA_OAUTH_TOKEN_URL` | Asana OAuth token endpoint (default `https://app.asana.com/-/oauth_token`). |
+| `FRONTEND_DOMAIN` | Public URL for the React app (e.g., `https://your-app.vercel.app` or `http://localhost:4444` for dev). |
+| `DEV_MODE` | Set to `true` for local development (fetches widget HTML from Vite dev server). |
 
-### Widget (`widgets/tasks`)
+### React App (`app`)
+
+| Variable | Description |
+| --- | --- |
+| `VITE_STYTCH_PUBLIC_TOKEN` | Stytch public token for client-side auth. |
+| `VITE_FRONTEND_DOMAIN` | Frontend domain for redirects (default `http://localhost:3011`). |
+
+### Vercel API Functions (`api`)
+
+| Variable | Description |
+| --- | --- |
+| `ASANA_CLIENT_SECRET` | Asana OAuth client secret (for token exchange). |
+| `STYTCH_PROJECT_ID` | Stytch project ID (for storing tokens). |
+| `STYTCH_PROJECT_SECRET` | Stytch project secret. |
+| `VITE_FRONTEND_DOMAIN` | Frontend domain for OAuth redirects. |
+
+### Widget (`widgets`)
 
 No environment variables required; the widget consumes data via Apps SDK `structuredContent`.
 
@@ -86,91 +123,178 @@ No environment variables required; the widget consumes data via Apps SDK `struct
 
 ## Local Development (Dev Mode)
 
-1. **Install dependencies**  
+1. **Install dependencies**
    ```bash
    pnpm install
    ```
 
-2. **Build shared types** (optional if using TypeScript project references)  
+2. **Set up environment variables**
+   Create `.env` files in `mcp_server_node/` and `app/` with the variables listed above. For local development:
+   - Set `DEV_MODE=true` in MCP server
+   - Set `FRONTEND_DOMAIN=http://localhost:4444` (widgets dev server)
+   - Configure Stytch project credentials
+   - Configure Asana OAuth credentials
+
+3. **Run all services concurrently** (recommended)
    ```bash
-   pnpm --filter @asana-chatgpt-app/shared-types build
+   pnpm run dev:all
+   ```
+   This starts:
+   - MCP server on `http://localhost:3000`
+   - Widgets dev server on `http://localhost:4444`
+   - React app on `http://localhost:3011` (via Vercel dev)
+
+   Or run services individually:
+   ```bash
+   # Terminal 1: MCP server
+   pnpm run dev:mcp
+
+   # Terminal 2: Widgets
+   pnpm run dev:widgets
+
+   # Terminal 3: React app
+   pnpm run dev:app
    ```
 
-3. **Run MCP server**  
-   ```bash
-  pnpm --filter asana-chatgpt-app-mcp-server run start
-   ```  
-
-4. **Run widget dev server** (auto reloads)  
-   ```bash
-   pnpm --filter @asana-chatgpt-app/widget-tasks dev
-   ```  
-   - Serves at `http://localhost:4444` (matches default in `server.ts` resource registration).
-
-5. **(Optional) OAuth app dev server** – once implemented, run `pnpm --filter asana-chatgpt-app-web dev`.
-
-6. **Connect via MCP Inspector or ChatGPT Developer Mode**  
-   Use the MCP server HTTP endpoint (`http://localhost:3000/mcp`) with the bearer token matching `DEVELOPER_SHARED_SECRET` (if configured).
+4. **Connect to ChatGPT Developer Mode**
+   - Add MCP connector in ChatGPT Settings → Connectors
+   - Point to `http://localhost:3000/mcp`
+   - Configure Stytch OAuth settings in ChatGPT connector
 
 ---
 
 ## Production Deployment
 
-1. **Shared Types** – Build once and publish as part of workspace pipeline (handled by `pnpm -r build`).
+### Vercel Deployment (App + API + Widgets)
 
-2. **Widgets** – Deploy to Vercel or static host with `pnpm --filter @asana-chatgpt-app/widget-tasks build`.  
-   - The build outputs `dist/` containing `tasks.html`, `tasks.js`, `tasks.css`.  
-   - Configure `WIDGETS_BASE_URL` to the deployment origin (e.g., `https://asana-tasks-widget.vercel.app`).
+The app, widgets, and API functions are deployed together to Vercel:
 
-3. **MCP Server (e.g., Alpic / self-hosted)**  
-   - Deploy `mcp_server_node/` bundle (build via `pnpm --filter asana-chatgpt-app-mcp-server build`).  
-   - Provide environment variables listed above.  
-   - Ensure persistent storage for the token JSON file or replace with secure database.
+1. **Connect to Vercel**
+   ```bash
+   vercel
+   ```
 
-4. **OAuth Web App**  
-   - Deploy `app/` to Vercel or similar, matching `ASANA_REDIRECT_URI` and `FRONTEND_DOMAIN`.
+2. **Configure environment variables in Vercel**
+   Set all required environment variables in Vercel dashboard:
+   - `STYTCH_PROJECT_ID`, `STYTCH_PROJECT_SECRET`
+   - `ASANA_CLIENT_SECRET`
+   - `VITE_STYTCH_PUBLIC_TOKEN`
+   - `VITE_FRONTEND_DOMAIN`
 
-5. **ChatGPT Connection (Production)**  
-   - Enable Developer Mode in ChatGPT.  
-   - Add MCP connector pointing to the deployed server URL (e.g., `https://asana-chat-app.yourhost.com/mcp`).  
-   - If using a shared secret, set it in ChatGPT connector settings.
+3. **Deploy**
+   ```bash
+   vercel --prod
+   ```
+
+   The `vercel.json` build command handles:
+   - Building widgets with `vite build`
+   - Copying widget assets to `app/public/`
+   - Building the React app
+   - Deploying API functions automatically
+
+### MCP Server Deployment (Separate)
+
+The MCP server should be deployed to a Node.js hosting platform (Railway, Render, etc.):
+
+1. **Build the server**
+   ```bash
+   pnpm --filter asana-chatgpt-app-mcp-server build
+   ```
+
+2. **Deploy with environment variables**
+   - Set all MCP server environment variables
+   - Set `DEV_MODE=false`
+   - Set `FRONTEND_DOMAIN` to your Vercel app URL
+   - Ensure `ASANA_REDIRECT_URI` matches your Vercel API endpoint
+
+3. **Configure Stytch OAuth**
+   - Configure Stytch OAuth redirect URIs
+   - Set up Asana OAuth app with correct redirect URI
+
+### Connect to ChatGPT
+
+1. Enable Developer Mode in ChatGPT
+2. Add MCP connector pointing to your deployed MCP server (e.g., `https://your-mcp-server.com/mcp`)
+3. Configure Stytch OAuth in ChatGPT connector settings
 
 ---
 
 ## Using the App
 
-1. **Authorize Asana**  
-   - In ChatGPT, prompt: “Connect my Asana account.”  
-   - The MCP tool `register-auth-code` will provide a link to the OAuth app (implementation placeholder).  
-   - Complete OAuth; tokens are stored in the server token store.
+### Authentication Flow
 
-2. **View Workspaces**  
-   - Prompt: “List my Asana workspaces.”  
-   - Returns a text summary plus structured data for UI.
+1. **Authenticate with ChatGPT**
+   - In ChatGPT, try to use an Asana tool
+   - ChatGPT redirects you to authenticate via Stytch OAuth
+   - Log in with your email (Stytch handles the authentication)
 
-3. **See Today’s Tasks**  
-   - Prompt example: “Show tasks due today in workspace 12345, include completed ones.”  
-   - The `list-tasks-due-today` tool fetches tasks and renders them via the widget.
+2. **Connect Asana Account**
+   - After Stytch authentication, visit the React app home page
+   - Click "Connect Asana Account"
+   - Authorize the Asana OAuth app
+   - The Vercel API function exchanges the code for tokens and stores them in Stytch user metadata
 
-4. **Refresh from Widget**  
-   - Inside the widget UI, use the refresh button to re-trigger the tool (requires widget App component to handle `callTool` – to be completed).
+### Available MCP Tools
+
+1. **`get-workspaces`**
+   - Lists all Asana workspaces you have access to
+   - Example prompt: "Show my Asana workspaces"
+   - Returns workspace names and IDs
+
+2. **`list-tasks-due-today`**
+   - Fetches tasks due today for a specific workspace
+   - Example prompt: "Show me tasks due today in workspace [workspace-gid]"
+   - Renders an interactive widget with task details
+   - Optionally include completed tasks with `includeCompleted: true`
+
+3. **`register-auth-code`** (internal)
+   - Used by the OAuth flow to register authorization codes
+   - Not typically called directly by users
+
+### Widget Features
+
+The tasks widget displays:
+- Task names and links to Asana
+- Due dates and completion status
+- Assignee information with photos
+- Associated project names
 
 ---
 
-## Visual Design Notes
+## Architecture Notes
 
-- Widgets should remain under `maxHeight` constraints. The UI leverages CSS utilities for truncated content and responsive layout.
-- Asana task cards highlight due status, completion state, assignee info, and project tags.
-- Button actions follow Apps SDK best practices: `window.openai.callTool` for refresh and `window.openai.sendFollowUpMessage` for additional prompts.
+### Authentication & Token Storage
+
+- **User Authentication**: Stytch OAuth handles MCP server authentication
+- **Token Storage**: Asana OAuth tokens are stored in Stytch user's `trusted_metadata` field
+- **Token Retrieval**: MCP server retrieves tokens from Stytch when making Asana API calls
+- **OAuth Flow**: Separate OAuth flow for Asana authorization, handled by Vercel serverless function
+
+### Widget Rendering
+
+- Widgets use React with Tailwind CSS for styling
+- The MCP server serves widget HTML differently based on `DEV_MODE`:
+  - **Dev mode**: Fetches full HTML from Vite dev server, rewrites paths
+  - **Production**: Serves built assets from Vercel deployment
+- Widgets receive data via `structuredContent` from MCP tools
+
+### Development Scripts
+
+- `dev:all`: Runs all three services concurrently using `concurrently`
+- `dev:mcp`: Runs MCP server with `tsx --watch`
+- `dev:widgets`: Runs Vite dev server on port 4444
+- `dev:app`: Runs Vercel dev server on port 3011
 
 ---
 
 ## Roadmap & Next Steps
 
-- Complete OAuth web app (`app/`) to handle consent UI and redirect flows.
-- Finalize widget React components with actual structuredContent rendering and state persistence (`TaskWidgetState`).
-- Add production-ready token storage (encrypt or use managed secrets).
-- Expand README with screenshots once UI is finalized.
+- [ ] Add widget interactivity (refresh button, follow-up messages)
+- [ ] Implement task filtering and sorting in widget
+- [ ] Add support for more Asana endpoints (create task, update task, etc.)
+- [ ] Add error handling and retry logic for API calls
+- [ ] Implement token refresh logic
+- [ ] Add comprehensive logging and monitoring
 
 ---
 
