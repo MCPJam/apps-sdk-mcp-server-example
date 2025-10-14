@@ -82,7 +82,7 @@ app.get('/oauth/callback', async (req, res) => {
 });
 console.log('✓ /oauth/callback route registered');
 
-// Register .well-known handlers AFTER specific routes to avoid wildcard conflicts
+// Register .well-known handlers AFTER specific routes (fixed metadataHandler to remove wildcards)
 app.use(
   '/.well-known/oauth-protected-resource',
   metadataHandler(async (req) => {

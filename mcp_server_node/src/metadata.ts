@@ -16,6 +16,6 @@ export function metadataHandler<T>(resolver: (req: Request) => Promise<T>) {
       .catch(next);
   };
   router.get('/', handleRequest);
-  router.get('/*', handleRequest);
+  // Removed wildcard '/*' route to match chatagotchi and prevent conflicts
   return router;
 }
